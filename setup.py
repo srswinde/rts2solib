@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+
+from setuptools import setup, find_packages
 
 setup(name='rts2solib',
       version='1.0',
@@ -8,6 +9,6 @@ setup(name='rts2solib',
       author='Scott Swindell',
       author_email='scottswindell@email.arizona.edu',
       scripts = ['scripts/targetscript.py'],
-      packages = ['rts2solib' ],
+      packages = find_packages(),
      )
 

@@ -217,6 +217,7 @@ class dbtable(object):
 class rts2_targets( dbtable ):
     tblname='targets'
 
+    fm = '00433   11.16  0.46 K1867 225.84280  178.79852  304.31681   10.82826  0.2226554  0.55993406   1.4578454  0 MPO435698  7839  51 1893-2017 0.66 M-v 38h MPCLINUX   1804    (433) Eros               20170604'
 
     def keys( self ):
         return []
@@ -228,6 +229,7 @@ class rts2_targets( dbtable ):
         return pd.read_sql( qr.selectable, qr.session.bind )
 
     def addrow( self, **kwargs ):
+        print ("adding row")
         defaults = {
             "tar_enabled" : True,
             "tar_priority" : 0,
@@ -245,20 +247,22 @@ class rts2_targets( dbtable ):
         else:
             raise ValueError("tar_name must have a value. Like: tar.addrow(tar_name='thename',ra=142, ...)")
         
-        if "tar_type" in kwargs:
-            if kwargs["tar_type"] == 'O':
+        if "type_id" in kwargs:
+            if kwargs["type_id"] == 'O':
                 if "tar_ra" not in kwargs or "tar_dec" not in kwargs:
                     raise ValueError("For target type opportunity 'O' the tar_ra and tar_dec values must be set")
 
-            elif tar_type == 'E':
+            elif kwargs['type_id'] == 'E':
                 if "tar_info" not in kwargs:
                     raise ValueError("For target type elliptical 'E', the tar_info must be set to the MPC format.")
-                assert len(kwargs['tar_info']) > 159,\
-	    		    "MPC orbit format must be atleast 160 charachters have a look:\
+                assert len(kwargs['tar_info']) >= 126,\
+	    		    "MPC orbit format must be atleast 126 charachters have a look:\
                      https://minorplanetcenter.net/iau/info/MPOrbitFormat.html" 
 
             else:
-                raise NotImplementedError("tar_type '{}' has not been implemented yet.".format(kwargs['tar_type']))
+                raise NotImplementedError("type_id '{}' has not been implemented yet.".format(kwargs['type_id']))
+        else:
+            raise ValueError("type_id must have a value")
 
         for dkey, dval in defaults.iteritems():
             if dkey not in kwargs:
@@ -269,8 +273,6 @@ class rts2_targets( dbtable ):
 
     
         
-        
-
 class queues_targets(dbtable):
     tblname="queues_targets"
 
