@@ -13,7 +13,6 @@ class so_exposure:
         self.num_exposures = num_exposures
 
 
-
     def __dictify__(self):
         thedict = {
                 "filter": self.filter,

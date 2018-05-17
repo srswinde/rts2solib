@@ -8,6 +8,6 @@ setup(name='rts2solib',
       author='Scott Swindell',
       author_email='scottswindell@email.arizona.edu',
       scripts = ['scripts/targetscript.py'],
-      packages = ['rts2solib', "rts2solib_db"],
+      packages = ['rts2solib' ],
      )
 
