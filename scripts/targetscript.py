@@ -14,7 +14,7 @@ class scripter(scriptcomm.Rts2Comm):
     """
         Rts2Comm scripter class
 
-        Descr:
+        Description:
         Reads and executes the instructions
         in the json script file.
     """

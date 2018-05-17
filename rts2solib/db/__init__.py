@@ -1,6 +1,6 @@
 
 
-from .mappings import rts2db_map, targets
+from .mappings import rts2_targets
 
 
 

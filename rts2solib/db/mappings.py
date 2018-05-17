@@ -3,10 +3,10 @@ from sqlalchemy.orm import mapper, sessionmaker
 
 import glob
 import os
-from rts2solib import Config
+from .. import Config
 import datetime
-
-
+import copy
+import pandas as pd
 IMDIR = "/home/rts2obs/rts2images/queue"
 CAMERA = "C0"
 
@@ -67,31 +67,91 @@ class Observations(object):
         return this_imdir
 
 
-class abstract_table(object):
+class abstract_row(object):
 
-    def __init__(self):
-        pass
-
-    def query(self):
-        Session = sessionmaker()
-        session = Session()
-        qr = session.query(self.__class__)
-        return qr
-
+    
+    def __init__(self, **kwargs):
+        print "abstract_row initialized"
+        for name, value in kwargs.iteritems():
+            if hasattr(self, name):
+                setattr(self, name, value)
+            else:
+                raise AttributeError("{} not in table {}".format( name, self.sql.__class__.__name__ ) )
 
     
     def pp(self):
         print type(self)
 
-    def add(self):
+
+    def dictify(self):
+        vals = copy.deepcopy(self.__dict__())
+        vals.pop('_sa_instance_state')
+        return vals
+        
+
+class dbtable(object):
+
+    def __init__(self, **kwargs):
+
+        if hasattr(self, 'tblname'):
+            tblname = self.tblname
+        else:
+            tblname = self.__class__.tblname
+
+
+        sql = type(tblname, (abstract_row,), {})
+
+
+        self.cfg = Config()
+        path = self.cfg["dbpath"]
+
+        engine = create_engine( path )
+        metadata = MetaData( engine )
+
+        if hasattr(self, 'tblname'):
+            tbl = Table( tblname, metadata, autoload=True)
+        else:
+
+            tbl = Table(self.__class__.__name__, metadata, autoload=True)
+
+        mapper( sql, tbl )
+        self.sql = sql()
+        self.sql.engine = engine
+
+   
+
+    def add(self, **kwargs):
         engine = create_engine(self.cfg["dbpath"])
         session = sessionmaker( bind=engine )()
-        session.add( self )
-        session.commit( )
-        session.close()
+        row = self.sql.__class__( **kwargs )
+        session.add( row )
+        session.commit()
+        return row
 
+
+    
+
+    def query(self):
+        session = self.bounded_session()
+        qr = session.query(self.sql.__class__)
+        return qr
+
+
+    def dataframe(self):
+        qr = self.query()
+        ex = qr.all()
+        pd.read_sql(ex, )
+        
+ 
+    def bounded_session(self):
+        engine = create_engine(self.cfg["dbpath"])
+        session = sessionmaker( bind=engine )
+        return session()
+
+    
 
 def qup():
+
     qt=queues_targets()
     qt.queue_id = 1
     qt.qid = 1000
@@ -102,42 +162,25 @@ def qup():
     qt.add()
 
 
-class rts2db_factory(object):
 
-    def __new__(cls ):
-
-        class newclass(abstract_table):
-            pass
-
-        cfg = Config()
-        path = cfg["dbpath"]
-
-
-        engine = create_engine( path )
-        metadata = MetaData(engine)
-        tbl = Table( cls.tblname, metadata, autoload=True )
-        mapper( newclass, tbl )
-        cls.cfg = cfg
-        
-        instance = newclass()
-        instance.tblname = cls.tblname
-        instance._meta = cls
-
-        return instance
-
-       
-
-class targets( rts2db_factory ):
-    
+class rts2_targets( dbtable ):
     tblname='targets'
+
+
+    def keys( self ):
+        return []
+
+
+    def dataframe(self):
+        qr=self.query()
         
-    
-class queues_targets(rts2db_factory):
+        return pd.read_sql( qr.selectable, qr.session.bind )
+
+class queues_targets(dbtable):
     tblname="queues_targets"
 
-class queues(rts2db_factory):
-    tblname="queues"
-
+class queues(dbtable):
+    pass
 
 def create_session(path="postgresql://rts2obs:rts2obs@localhost/stars"):
     
@@ -161,6 +204,4 @@ def main():
     return resp
 
     
-
-
 
