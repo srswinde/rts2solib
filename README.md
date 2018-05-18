@@ -5,7 +5,7 @@
 
 This library is for SO telescopes to interact with RTS2. 
 
-##Install
+## Install
 
 python setup.py install
 
