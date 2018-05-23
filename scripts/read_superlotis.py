@@ -37,11 +37,6 @@ type_dict = {"UVOT":0, "AzTEC":1, "SPOL":1, "ZTF":1}
 
 
 
-class ObservationInfo:
-	def __init__(self, filter, exptime, amount):
-		self.filter = filter
-		self.exptime = exptime
-		self.amount = amount
 
 class lotisimport:
 	def __init__(self, sr):

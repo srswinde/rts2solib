@@ -4,7 +4,8 @@ import baseclasses
 import os
 from astropy.coordinates import Angle
 from astropy import units as u
-
+from .db import rts2_targets
+from astroquery.mpc import MPC
 
 class so_exposure:
     def __init__( self, filter_name="R", exptime=30, num_exposures=1 ):
@@ -20,11 +21,22 @@ class so_exposure:
                 "amount" :self.num_exposures,
                 }
 
+
+       
 class so_target:
-    
+    """Class to hold and save to file a target's 
+	observation parameters ie fitlers, number of
+	exposure etc. This is based on Sam's 
+	QueueObject class.
+
+	The specifics of the observation are saved in 
+	the /home/rts2obs/.rts2scripts directory. This
+	file is later read by an rts2 script to carry
+	out the observation. 
+	"""
 
     def __init__(self, name=None, ra=None, dec=None, Type=None, obs_info=None, init_method="lotis" ):
-
+	
         if init_method=="focus":
             self.type = Type
             self.name = name
@@ -58,7 +70,7 @@ class so_target:
             thedict = {
                     "name"	: self.name,
                     "type"	: self.type,
-                    "ra" 	: self.ra,
+                    "ra"	: self.ra,
                     "dec"	: self.dec,
                     "id"        : self.id,
                     "obs_info" : [] 
@@ -69,8 +81,7 @@ class so_target:
                             {
                                     "filter"  : obs.filter,
                                     "exptime" : obs.exptime,
-                                    "amount"  : obs.amount,
-                                            
+                                    "amount"  : obs.num_exposures,
                             }
                     )
             return thedict
@@ -80,7 +91,7 @@ class so_target:
 
 
     def __repr__( self ):
-        return "<QueueObject {name} {ra} {dec}>".format(**self.dictify())
+        return "<so_target {name} {ra} {dec}>".format( **self.dictify() )
 
     def save( self, save_path="/home/rts2obs/.rts2scripts", save_file=None ):
         if save_file is None:
@@ -89,33 +100,60 @@ class so_target:
 
         with open(fpath, 'w') as fd:
                 json.dump( self.dictify(), fd, indent=2 )
-            
-    def create_target( self, prx=None ):
+
+
+    def create_target_api( self, prx=None ):
+	"""This uses the rts2 api to create a target
+	I would rather sqlalchemy to write directly to
+	the database. 
+	"""
         if prx is None:
             rts2.createProxy( "http://localhost:8889", username=self.cfg["username"], password=self.cfg["password"] )
 
-        ra = Angle(self.ra, unit=u.hour)
-        dec = Angle(self.dec, unit=u.deg)
-        return rts2.target.create( self.name, ra.deg, dec.deg)
+        ra = Angle( self.ra, unit=u.hour )
+        dec = Angle( self.dec, unit=u.deg )
+        return rts2.target.create( self.name, ra.deg, dec.deg )
+
+    def create_target_db( self ):
+        ra = Angle( self.ra, unit=u.hour )
+        dec = Angle( self.dec, unit=u.deg )
+        
+        # access the database
+        tar = rts2_targets()
+
+        # we leave out the tar_id as it is 
+        # the primary key. Better to let the
+        # the rts2_target class handle that internally
+        rowvals = {
+            "tar_name" : self.name,
+            "tar_ra" : ra.deg,
+            "tar_dec" : dec.deg,
+            "tar_pm_ra" : 0,
+            "tar_pm_dec" : 0,
+            "interruptible" : True,
+            "tar_bonus" : 0,
+            "tar_enabled" : True,
+            "type_id" : 'O',
+        }
+
+        return tar.addrow(** rowvals)
+
+class asteroid(so_target):
+    def __init__( self, name ):
+        mpc = MPC()
+        result = mpc.query_object_async( "asteroid", name=name )
+        self.vals = result.json()
 
 
+    def mpc_format( data ):
+        pass
 
-
-class so_target2( rts2.target.Target ):
-
-    def __init__(self, name, ra, dec):
-        self.cfg = baseclasses.Config()
-        self.name = name
-        self.ra = ra
-        self.dec = dec
-
-
-        tfinfo = rts2.target.get( self.name ) 
-        # target doesn't exist
-        if len( tginfo ) == 0:
-           ID = rts2.target.create(self.name, self.ra)
-        else:
-           pass
-
-
-
+def test():
+    fm = '00433   11.16  0.46 K1867 225.84280  178.79852  304.31681   10.82826  0.2226554  0.55993406   1.4578454  0 MPO435698  7839  51 1893-2017 0.66 M-v 38h MPCLINUX   1804    (433) Eros               20170604'
+    stru = {
+            'number': (1,7),
+            '': ( , ),
+            }
+    print fm[0:7]
+    print fm[8:13]
+    print fm[14:19]
