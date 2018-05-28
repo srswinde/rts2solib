@@ -1,3 +1,4 @@
+from __future__ import print_function
 import rts2
 import json
 import baseclasses
@@ -8,6 +9,7 @@ from .db.mappings import rts2_targets
 from astroquery.mpc import MPC
 
 class so_exposure:
+
     def __init__( self, filter_name="R", exptime=30, num_exposures=1 ):
         self.filter = filter_name
         self.exptime = exptime
@@ -20,9 +22,14 @@ class so_exposure:
                 "exptime":self.exptime,
                 "amount" :self.num_exposures,
                 }
+ 
+    def __repr__(self):
+        return json.dumps( self.__dictify__() )
 
 
-       
+    def __getitem__( self, key ):
+        return self.__dictify__()[key]
+
 class so_target(object):
     """Class to hold and save to file a target's 
 	observation parameters ie filters, number of
@@ -35,9 +42,30 @@ class so_target(object):
 	out the observation. 
 	"""
 
-    def __init__(self, name, ra=None, dec=None, Type=None, tar_info=None, obs_info=None, init_method="lotis" ):
+    def __init__(self, name, ra=None, dec=None, Type=None, tar_info=None, obs_info=None ):
 	
 
+        """Constructor method
+
+        params:
+            name: str 
+                The name of the object must be uniqure from other objects in the database
+            ra : str sexagesimal ra coordinate
+
+            dec: str sexagesimal dec coordinate
+
+            Type: char 
+                The value of the type_id in the database this differentiates between
+                stellar 'O' and non stellar 'E' and callibration. 
+
+            tar_info: str
+                Extra information about target like MPC or TLE. This corresponds to the
+                tar_info in the database
+
+            obs_info: list (of so_exposure)
+                Information specific to the observation ie filters, exposure time etc. 
+
+        """
 
         if obs_info is None:
             # no obs_info given use the default
@@ -71,12 +99,12 @@ class so_target(object):
 
 
     def outputobjectinfo(self):
-            print "Queue Object: {}, {}".format(self.name, self.type)
-            print "RA: {}".format(self.ra)
-            print "DEC: {}".format(self.dec)
-            print "Observation Infos"
+            print("Queue Object: {}, {}".format(self.name, self.type))
+            print("RA: {}".format(self.ra))
+            print("DEC: {}".format(self.dec))
+            print("Observation Infos")
             for obs in self.observation_info:
-                    print "     Filter: {}, Exposure Time {}, Amount {}".format(obs.filter, obs.exptime, obs.amount)
+                    print("     Filter: {}, Exposure Time {}, Amount {}".format(obs.filter, obs.exptime, obs.amount))
 
 
     def dictify(self):
@@ -156,6 +184,38 @@ class so_target(object):
         return tar.addrow(** rowvals)
 
 
+class stellar(so_target):
+
+    def __init__(self, name, ra, dec, obs_info=None ):
+
+        super( self.__class__, self ).__init__(name, ra, dec, obs_info=obs_info, Type='O')
+
+    def create_target_db( self ):
+
+        ra = Angle( self.ra, unit=u.hour )
+        dec = Angle( self.dec, unit=u.deg )
+        
+        # access the database
+        tar = rts2_targets()
+
+        # we leave out the tar_id as it is 
+        # the primary key. Better to let the
+        # the rts2_target class handle that internally
+        rowvals = {
+            "tar_name" : self.name,
+            "tar_ra" : ra.deg,
+            "tar_dec" : dec.deg,
+            "tar_pm_ra" : 0,
+            "tar_pm_dec" : 0,
+            "interruptible" : True,
+            "tar_bonus" : 0,
+            "tar_enabled" : True,
+            "type_id" : 'O',
+        }
+
+        return tar.addrow(** rowvals)
+
+
 class asteroid(so_target):
 
     def __init__( self, name, jsondata=None, mpc=None, obs_info=None ):
@@ -170,7 +230,6 @@ class asteroid(so_target):
 
     def mpc_format( self ):
 
-    
         stru = {
             'number': (1,7, '07d' ),
             'absolute_magnitude': (9 ,13 , '5.2f'),
@@ -272,7 +331,7 @@ fm = '00433   11.16  0.46 K1867 225.84280  178.79852  304.31681   10.82826  0.22
 def test():
 
     for valname, pos in stru.iteritems():
-        print valname, fm[ pos[0]-1: pos[1] ]
+        print(valname, fm[ pos[0]-1: pos[1] ])
 
 
 def test2():
