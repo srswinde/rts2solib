@@ -1,0 +1,6 @@
+**/*.pyc
+build/*
+rts2solib.egg-info
+**/__pycache__
+**/*swp
+dist/*
