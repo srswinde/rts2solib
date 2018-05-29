@@ -7,6 +7,7 @@ from astropy.coordinates import Angle
 from astropy import units as u
 from .db.mappings import rts2_targets
 from astroquery.mpc import MPC
+from rts2_wwwapi import rts2comm
 
 class so_exposure:
 
@@ -114,7 +115,7 @@ class so_target(object):
                     "type"	: self.type,
                     "ra"	: self.ra,
                     "dec"	: self.dec,
-                    "id"        : self.id,
+                    #"id"        : self.id,
                     "obs_info" : [] 
                     
             }
@@ -138,6 +139,8 @@ class so_target(object):
     def save( self, save_path="/home/rts2obs/.rts2scripts", save_file=None ):
         dbresp = self.create_target_db()
         self.id = dbresp.tar_id
+	commer=rts2comm()
+	commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
 
         if save_file is None:
                 save_file = "{}.json".format( self.name )

@@ -250,13 +250,14 @@ class rts2_targets( dbtable ):
         print ("adding row")
         qr = self.query()
         flt = qr.filter( self._rowdef.tar_name==kwargs['tar_name'] )
-        if qr.count() != 0:
+        if flt.count() != 0:
             row = flt.first()
             for key in kwargs:
                 if hasattr(row, key):
                     setattr(row, key, kwargs[key])
                 else:
-                    print dir(row)
+                    print type(row)
+					
                     raise Exception("bad column name {}".format(key))
 
             
@@ -265,7 +266,7 @@ class rts2_targets( dbtable ):
 
             return row
 
-        if qr.count() > 1:
+        if flt.count() > 1:
             raise Exception( "{}".format(kwargs['tar_name']) )
         
         defaults = {
@@ -307,7 +308,7 @@ class rts2_targets( dbtable ):
                 kwargs[dkey] = dval
 
     
-        super(rts2_targets, self).addrow( **kwargs )
+        return super(rts2_targets, self).addrow( **kwargs )
 
 
     
