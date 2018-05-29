@@ -279,4 +279,6 @@ class queues_targets(dbtable):
 class queues(dbtable):
     pass
 
+class scripts(dbtable):
+    tblname="scripts"
 

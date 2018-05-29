@@ -1,6 +1,6 @@
 
 
-from .mappings import rts2_targets
+from .mappings import rts2_targets, scripts
 
 
 

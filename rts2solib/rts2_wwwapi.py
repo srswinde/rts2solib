@@ -103,9 +103,9 @@ class rts2comm(object):
         try:
             r = requests.get( url, 
                     auth=self.auth )
-            data = r.text
+            data = json.loads(r.text)
         except Exception as err:
-            data = json.dumps({"error": str(err)})
+            data = {"error": str(err)}
 
         return data
 
