@@ -95,6 +95,7 @@ class so_target(object):
 
 
         self.observation_info = obs_info
+        self.save()
         #self.id = self.create_target_db()
 
 
@@ -135,6 +136,9 @@ class so_target(object):
         return "<so_target {name} {ra} {dec}>".format( **self.dictify() )
 
     def save( self, save_path="/home/rts2obs/.rts2scripts", save_file=None ):
+        dbresp = self.create_target_db()
+        self.id = dbresp.tar_id
+
         if save_file is None:
                 save_file = "{}.json".format( self.name )
         fpath = os.path.join( save_path, save_file )
@@ -142,7 +146,6 @@ class so_target(object):
         with open(fpath, 'w') as fd:
                 json.dump( self.dictify(), fd, indent=2 )
 
-        self.create_target_db()
 
 
     def create_target_api( self, prx=None ):

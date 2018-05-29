@@ -147,9 +147,18 @@ class dbtable(object):
         
         
 
-    def addrow(self, **kwargs):
+    def addrow(self, row=None, **kwargs):
         """Add a row to the database table"""
 
+        if row is not None:
+            engine = create_engine(self.cfg["dbpath"])
+            session = sessionmaker( bind=engine )()
+            row = self._rowdef( **kwargs )
+            session.add( row )
+            session.commit()
+
+            return row
+   
         updater = {}
         pk = self.primary_key()
         for col in self.columns():
@@ -191,6 +200,11 @@ class dbtable(object):
         qr = session.query(self._rowdef )
         return qr
 
+    def query2(self):
+        session = self.bounded_session()
+        qr = session.query(self._rowdef )
+        return session, qr
+
         
     def pkmax(self):
         """Get the max primary key so we don't reuse it"""
@@ -226,10 +240,34 @@ class rts2_targets( dbtable ):
     def dataframe(self):
         qr=self.query()
         
-        return pd.read_sql( qr.selectable, qr.session.bind )
+        df = pd.read_sql( qr.selectable, qr.session.bind )
+        df.index = df.targets_tar_id
+        return df
+    
+
 
     def addrow( self, **kwargs ):
         print ("adding row")
+        qr = self.query()
+        flt = qr.filter( self._rowdef.tar_name==kwargs['tar_name'] )
+        if qr.count() != 0:
+            row = flt.first()
+            for key in kwargs:
+                if hasattr(row, key):
+                    setattr(row, key, kwargs[key])
+                else:
+                    print dir(row)
+                    raise Exception("bad column name {}".format(key))
+
+            
+            qr.session.add(row)
+            qr.session.commit()
+
+            return row
+
+        if qr.count() > 1:
+            raise Exception( "{}".format(kwargs['tar_name']) )
+        
         defaults = {
             "tar_enabled" : True,
             "tar_priority" : 0,
@@ -237,8 +275,8 @@ class rts2_targets( dbtable ):
             "interruptible": True, 
             "tar_pm_ra": 0,
             "tar_pm_dec":0,
-            
         }
+
         if "tar_name" in kwargs:
             tarnames = self.query().filter(self.columns()['tar_name']==kwargs['tar_name']).all()
             if len(tarnames) > 0:
@@ -270,6 +308,7 @@ class rts2_targets( dbtable ):
 
     
         super(rts2_targets, self).addrow( **kwargs )
+
 
     
         
