@@ -34,7 +34,7 @@ class ShiftFocus (scriptcomm.Rts2Comm):
 		#self.setValue("shiftfocus", 1, "C0")
 		#self.setValue( "exposure", 5 )
 
-                self.setValue("exposure", 30 )
+                self.setValue("exposure", 15 )
 		img = self.exposure( self.before_readout, '%b/queue/%f' )
 		self.log('I', "made it past exposure")
                 to_dataserver(img)

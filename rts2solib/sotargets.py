@@ -6,7 +6,10 @@ import os
 from astropy.coordinates import Angle
 from astropy import units as u
 from .db.mappings import rts2_targets
-from astroquery.mpc import MPC
+try:
+	from astroquery.mpc import MPC
+except Exception as err:
+	print( err )
 from rts2_wwwapi import rts2comm
 
 class so_exposure:
@@ -331,8 +334,12 @@ class asteroid(so_target):
 
 
 
+class focusobs(so_target):
 
-fm = '00433   11.16  0.46 K1867 225.84280  178.79852  304.31681   10.82826  0.2226554  0.55993406   1.4578454  0 MPO435698  7839  51 1893-2017 0.66 M-v 38h MPCLINUX   1804    (433) Eros               20170604'
+    def __init__(self, name, ra, dec):
+        super(self.__class__, self).__init__(name=name, ra=ra, dec=dec, Type='O' )
+        commer= rts2comm()
+        commer.setscript(self.id, script='exe /etc/rts2/rts2-focusing')
 
 def test():
 

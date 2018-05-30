@@ -1,3 +1,5 @@
+import time
+t0=time.time()
 from sqlalchemy import create_engine, MetaData, Table, func
 from sqlalchemy.orm import mapper, sessionmaker
 
