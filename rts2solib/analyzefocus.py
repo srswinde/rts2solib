@@ -280,23 +280,6 @@ class focalfit:
 		else:
 			return focalval
 
-def main():
-
-	verbose = True
-	files = [x for x in os.listdir(os.getcwd()) if '.fits' in x]
-	print files
-	#files = ['20180530050306-362-RA.fits']
-	for f in files[:]:
-		printv(f, verbose)
-		focalrun = focalfit(img=f, plotimages=True, verbose=verbose)
-		focalval = focalrun.run()
-
-		printv("\n", verbose)
-		printv(focalval, verbose)
-		printv(focalrun.flags, verbose)
-		printv("\n", verbose)
-main()
-
 #psuedo code
 #define files
 #loop over files
