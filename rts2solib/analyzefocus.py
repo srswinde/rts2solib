@@ -18,11 +18,11 @@ class shiftobjs:
 		self.objs = []
 
 	def addobjs(self, common_objects, focpos, focalshift, data_sub):
-		sorted_objects = sorted(common_objects, key=lambda x: x['y'], reverse=True)
+		common_objects = sorted(common_objects, key=lambda x: x['y'], reverse=False)
 		for f in common_objects:
-			flux_radius = sep.flux_radius(data_sub, f['x'], f['y'] ,100, 0.8)
-			#fwhm = 2 * math.sqrt(math.log(2) * (f['a']**2 + f['b']**2))
-			self.objs.append(focobj(f['x'], f['y'], f['a'], f['b'], focpos, flux_radius[0], f['theta']))
+			#flux_radius = sep.flux_radius(data_sub, f['x'], f['y'] ,100, 0.8)
+			fwhm = 2 * math.sqrt(math.log(2) * (f['a']**2 + f['b']**2))
+			self.objs.append(focobj(f['x'], f['y'], f['a'], f['b'], focpos, fwhm, f['theta']))
 			focpos = focpos + focalshift
 		self.avgx = np.mean([x.x for x in self.objs])
 		self.avgy = np.mean([x.y for x in self.objs])
@@ -108,6 +108,7 @@ def remove_bad_points(focs, fwhms):
 def test_positions(group, nshifty):
 	#this will make sure that the group is in the correct offset.
 	#making sure that it doesn't grab any thing that might be in the same column
+	group = sorted(group, key=lambda x: x['y'], reverse=False)
 	offsets = [abs(group[ii-1]['y'] - group[ii]['y']) for ii in range(1, len(group))]
 	avgoffset = np.mean(offsets[0:len(offsets)-1])
 	lastoffset = np.mean(offsets[len(offsets)-1:len(offsets)])/2.0
@@ -117,10 +118,10 @@ def test_positions(group, nshifty):
 class focalfit:
 
 	def __init__(self, img, 
-					   object_err_thresh=2.0, 
-					   object_minarea=10,
-					   ellipticity_thresh=0.9,
-					   deblend_cont=0.1,
+					   object_err_thresh=8, 
+					   object_minarea=5,
+					   ellipticity_thresh=0.95,
+					   deblend_cont=1.0,
 					   plotimages = False,
 					   thinking = False,
 					   verbose = False):
@@ -170,7 +171,7 @@ class focalfit:
 										deblend_cont=self.deblend_cont)
 
 		#There is a bad pixel at like 275. Remove all objects along it.
-		objects = [o for o in objects if abs(o['x'] - 275) > 1]
+		#objects = [o for o in objects if abs(o['x'] - 275) > 1]
 		#ellipticity culling
 		objects = [o for o in objects if math.sqrt(1 - (o['b']*o['b'])/(o['a']*o['a'])) < self.ellipticity_thresh]
 
@@ -189,11 +190,10 @@ class focalfit:
 			common_objects = [x for x in objects if abs(x['x'] - ox) < shift_x and abs(x['y']-oy) < shift_y]
 			#we only want groupings that have the same number of shifts
 			if len(common_objects) == nshifts:
-				
 				#add the objects and calculate the fwhm parameter for each, along with incrementing the focal position value
 				shiftobjects.addobjs(common_objects, focalval, focalshift, data_sub)
 				#test if it has already been added
-				if notalreadyadded(shiftobjects, groups) and test_positions(common_objects, nshift_y):
+				if notalreadyadded(shiftobjects, groups)and test_positions(common_objects, nshift_y):
 					groups.append(shiftobjects)
 
 					if self.plotimages:
@@ -231,38 +231,38 @@ class focalfit:
 						plotfocalfit(x_interp, y_interp, minfoc, miny_ind, focs, fwhms)
 
 					if minfoc < (xmin + 0.125*(xmax-xmin)):
-						#printv("bad fit data. lowend", self.verbose)
+						printv("bad fit data. lowend", self.verbose)
 						self.flags.append(1)
 					elif minfoc > (xmin + 0.875*(xmax-xmin)):
-						#printv("bad fit data. high end", self.verbose)
+						printv("bad fit data. high end", self.verbose)
 						self.flags.append(2)
 					elif not concave_up:
-						#printv("concave down!", self.verbose)
+						printv("concave down!", self.verbose)
 						self.flags.append(3)
 					else:
 						fwhm_av.append(minfoc)
 						self.flags.append(0)
 
 		if len(fwhm_av) != 0:
-			return np.mean(fwhm_av), self.flags
+			return np.mean(fwhm_av)
 		else:
-			return focalval, self.flags
+			return focalval
 
 def main():
 
-	verbose = True
+	verbose = False
 	files = [x for x in os.listdir(os.getcwd()) if '.fits' in x]
-	#files = ['20180529084855-211-RA.fits']
+	#files = ['20180530050306-362-RA.fits']
 	for f in files[:]:
 		printv(f, verbose)
-		focalrun = focalfit(img=f, plotimages=True, verbose=verbose)
-		focalval, flags = focalrun.run()
+		focalrun = focalfit(img=f, plotimages=False, verbose=verbose)
+		focalval = focalrun.run()
 
 		printv("\n", verbose)
 		printv(focalval, verbose)
-		printv(flags, verbose)
+		printv(focalrun.flags, verbose)
 		printv("\n", verbose)
-main()
+#main()
 
 #psuedo code
 #define files

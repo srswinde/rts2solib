@@ -37,13 +37,14 @@ class ShiftFocus (scriptcomm.Rts2Comm):
 		n_shifts = int(self.getValue( "SHIFT_N", "C0" ))
 		shift_fo= int(self.getValue( "SHIFT_FO", "C0" ))
 		focpos = float(self.getValue("FOC_TAR", self.focuser).split()[0])
-		self.setValue("FOC_TAR", focpos-((n_shifts*shift_fo)/2.0), self.focuser)
+		#self.setValue("FOC_TAR", focpos-((n_shifts*shift_fo)/2.0), self.focuser)
+		self.setValue("FOC_TAR", 2250, self.focuser)
 		img = self.exposure( self.before_readout, '%b/queue/%f' )
                 to_dataserver(img)
 		#call focalfit
 		focfit = focalfit(img)
-		focalvalue_fit, flags = focfit.run()
-
+		focalvalue_fit = focfit.run()
+		flags = focfit.flags
                 if len([f for f in flags if f == 2]) > 0:
                     self.log('I', "some fits were high ended, maybe start with the initial focal position higher")
                 if len([f for f in flags if f == 1]) > 0:
