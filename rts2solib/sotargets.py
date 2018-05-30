@@ -6,7 +6,10 @@ import os
 from astropy.coordinates import Angle
 from astropy import units as u
 from .db.mappings import rts2_targets
-from astroquery.mpc import MPC
+try:
+	from astroquery.mpc import MPC
+except Exception as err:
+	print( err )
 from rts2_wwwapi import rts2comm
 
 class so_exposure:
