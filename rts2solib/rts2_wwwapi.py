@@ -179,3 +179,8 @@ class rts2comm(object):
         return rts2_value
 
 
+    def setscript(self, tar_id, script, cam="C0"):
+        self._converse('api/change_script', id=tar_id, c=cam, s=script)
+
+
+
