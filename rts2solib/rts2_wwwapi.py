@@ -113,7 +113,8 @@ class rts2comm(object):
 
     def get_device_info_all( self ):
         """Same as device info but return data on all the devices"""
-        return {device:self.get_device_info(device) for device in self.devlist}
+	return json.loads( self._converse("api/getall") )
+        #return {device:self.get_device_info(device) for device in self.devlist}
            
 
     def set_rts2_value(self, device, name, value):
