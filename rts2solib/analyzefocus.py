@@ -20,9 +20,9 @@ class shiftobjs:
 	def addobjs(self, common_objects, focpos, focalshift, data_sub):
 		common_objects = sorted(common_objects, key=lambda x: x['y'], reverse=False)
 		for f in common_objects:
-			#flux_radius = sep.flux_radius(data_sub, f['x'], f['y'] ,100, 0.8)
-			fwhm = 2 * math.sqrt(math.log(2) * (f['a']**2 + f['b']**2))
-			self.objs.append(focobj(f['x'], f['y'], f['a'], f['b'], focpos, fwhm, f['theta']))
+			#focusparam = sep.flux_radius(data_sub, f['x'], f['y'] ,100, 0.8)[0]
+			focusparam = 2 * math.sqrt(math.log(2) * (f['a']**2 + f['b']**2))
+			self.objs.append(focobj(f['x'], f['y'], f['a'], f['b'], focpos, focusparam, f['theta']))
 			focpos = focpos + focalshift
 		self.avgx = np.mean([x.x for x in self.objs])
 		self.avgy = np.mean([x.y for x in self.objs])
@@ -115,13 +115,36 @@ def test_positions(group, nshifty):
 	return (abs(nshifty-avgoffset) < 5 and abs(nshifty-lastoffset) < 5)
 		
 
+def filter_blended(group):
+	#print len(group)
+	group = sorted(group, key=lambda x: x['y'], reverse=False)
+	offsets = [abs(group[ii-1]['y'] - group[ii]['y']) for ii in range(1, len(group))]
+	avgoffset = np.mean(offsets[0:len(offsets)-1])
+	avgoffset_std = np.std(offsets[0:len(offsets)-1])
+	
+	popps = []
+	g_before = group[0]
+
+	for ii in range(1, len(group)):
+		g = group[ii]
+		seperation = abs(g_before['y'] -  g['y'])
+		if seperation < 0.5*avgoffset:
+			popps.append(ii-1)
+			newy = 0.5*(g_before['y'] +  g['y'])
+			g['y'] = newy
+		g_before = g
+
+	for aa,p in enumerate(popps):	
+		group.pop(p-aa)
+	return group
+
 class focalfit:
 
 	def __init__(self, img, 
-					   object_err_thresh=8, 
-					   object_minarea=5,
-					   ellipticity_thresh=0.95,
-					   deblend_cont=1.0,
+					   object_err_thresh=10, 
+					   object_minarea=2,
+					   ellipticity_thresh=0.9,
+					   deblend_cont=0.001,
 					   plotimages = False,
 					   thinking = False,
 					   verbose = False):
@@ -164,11 +187,18 @@ class focalfit:
 		bkg_image = bkg.back()
 		bkg_rms = bkg.rms()
 		data_sub = data - bkg
-		objects = sep.extract(data_sub, self.object_err_thresh, 
+		#objects = sep.extract(data_sub, self.object_err_thresh, 
+		#								err=bkg.globalrms, 
+		#								minarea=self.object_minarea,
+		#								filter_kernel=None,
+		#								deblend_cont=self.deblend_cont)
+
+		objects = sep.extract(data_sub, 5.0, 
 										err=bkg.globalrms, 
-										minarea=self.object_minarea,
+										minarea=5,
 										filter_kernel=None,
-										deblend_cont=self.deblend_cont)
+										deblend_cont=0.0001,
+										deblend_nthresh=10)
 
 		#There is a bad pixel at like 275. Remove all objects along it.
 		#objects = [o for o in objects if abs(o['x'] - 275) > 1]
@@ -189,6 +219,8 @@ class focalfit:
 			#find objects along the same line
 			common_objects = [x for x in objects if abs(x['x'] - ox) < shift_x and abs(x['y']-oy) < shift_y]
 			#we only want groupings that have the same number of shifts
+			if len(common_objects) > nshifts:
+				common_objects = filter_blended(common_objects)
 			if len(common_objects) == nshifts:
 				#add the objects and calculate the fwhm parameter for each, along with incrementing the focal position value
 				shiftobjects.addobjs(common_objects, focalval, focalshift, data_sub)
@@ -250,19 +282,20 @@ class focalfit:
 
 def main():
 
-	verbose = False
+	verbose = True
 	files = [x for x in os.listdir(os.getcwd()) if '.fits' in x]
+	print files
 	#files = ['20180530050306-362-RA.fits']
 	for f in files[:]:
 		printv(f, verbose)
-		focalrun = focalfit(img=f, plotimages=False, verbose=verbose)
+		focalrun = focalfit(img=f, plotimages=True, verbose=verbose)
 		focalval = focalrun.run()
 
 		printv("\n", verbose)
 		printv(focalval, verbose)
 		printv(focalrun.flags, verbose)
 		printv("\n", verbose)
-#main()
+main()
 
 #psuedo code
 #define files
