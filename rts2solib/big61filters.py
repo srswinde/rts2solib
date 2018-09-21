@@ -21,13 +21,14 @@ class filter_set:
     # the galil and RTS2, the value in the dict is a tupple
     # of possible aliases for each filter
     alias = {
-            "Bessell-U": ("U",),
+            "Bessell-U": ("U", 'bessell-u'),
             # "Harris-U": ("U"), 
-            "Harris-R": ("R",), 
-            "Harris-V": ("V",), 
+            "Harris-R": ("R", "harris-r"), 
+            "Harris-V": ("V","harris-v" ), 
             "Arizona-I": ("I",), 
             "Harris-B": ("B",),
-            "Schott-8612": ("Schott",)  }
+            "Schott-8612": ("Schott",),
+            "Open": ("Open", "open", "OPEN")  }
 
 
     def __init__(self, filters = None, prx=None):
@@ -62,12 +63,12 @@ class filter_set:
     def check_alias( self, alias ):
         
         for name, aliases in self.alias.iteritems():
-            if alias.lower() == name.lower():
+            if alias == name:
                 return alias
 
             else:
                 for al in aliases:
-                    if al.lower() == alias.lower():
+                    if al == alias:
                         return name
 
         # we didn't find the alias
@@ -86,6 +87,7 @@ class filter_set:
         elif type(key) == str or type(key) == unicode:
             realname = self.check_alias(key)
             if realname is not None:
+		print(realname)
                 return self._filter_list.index(realname)
         raise ValueError( "cannot find filter {}".format(key) )
 
