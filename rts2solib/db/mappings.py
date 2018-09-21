@@ -1,6 +1,6 @@
 import time
 t0=time.time()
-from sqlalchemy import create_engine, MetaData, Table, func
+from sqlalchemy import create_engine, MetaData, Table, func,Column, Integer
 from sqlalchemy.orm import mapper, sessionmaker
 
 import glob
@@ -125,10 +125,14 @@ class dbtable(object):
         metadata = MetaData( engine )
 
         if hasattr(self, 'tblname'):
-            tbl = Table( tblname, metadata, autoload=True)
+            tblname=self.tblname
         else:
+            tblname=self.__class__.__name__
 
-            tbl = Table(self.__class__.__name__, metadata, autoload=True)
+        if tblname == "scripts":#scripts doesnt have primary key so override it.
+            tbl = Table(tblname, metadata, Column("tar_id", Integer, primary_key=True), autoload=True)
+        else:
+            tbl = Table( tblname, metadata, autoload=True)
 
         mapper( self._rowdef, tbl )
         self._rowdef.engine = engine
@@ -319,7 +323,7 @@ class queues_targets(dbtable):
     tblname="queues_targets"
 
 class queues(dbtable):
-    pass
+    tblname="queues"
 
 class scripts(dbtable):
     tblname="scripts"

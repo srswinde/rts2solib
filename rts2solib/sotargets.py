@@ -140,6 +140,7 @@ class so_target(object):
         return "<so_target {name} {ra} {dec}>".format( **self.dictify() )
 
     def save( self, save_path="/home/rts2obs/.rts2scripts", save_file=None ):
+	print("Should be creating db now")
         dbresp = self.create_target_db()
         self.id = dbresp.tar_id
 	commer=rts2comm()
@@ -167,6 +168,7 @@ class so_target(object):
         return rts2.target.create( self.name, ra.deg, dec.deg )
 
     def create_target_db( self ):
+	print("create_target_db called")
         if self.type is not 'O':
             raise NotImplementedError("This type of target ({}) can not be saved to db".format(self.type))
         ra = Angle( self.ra, unit=u.hour )
@@ -175,6 +177,7 @@ class so_target(object):
         # access the database
         tar = rts2_targets()
 
+		
         # we leave out the tar_id as it is 
         # the primary key. Better to let the
         # the rts2_target class handle that internally
@@ -206,6 +209,10 @@ class stellar(so_target):
         
         # access the database
         tar = rts2_targets()
+	n_samename = len(tar.query().filter(tar._rowdef.tar_name.like("{}%".format(self.name))).all())
+	if n_samename > 0:
+		
+		self.name = "{}_{:02d}".format(self.name, n_samename)
 
         # we leave out the tar_id as it is 
         # the primary key. Better to let the
