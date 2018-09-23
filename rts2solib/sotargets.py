@@ -99,7 +99,7 @@ class so_target(object):
 
 
         self.observation_info = obs_info
-        self.save()
+        #self.save()
         #self.id = self.create_target_db()
 
 
@@ -141,8 +141,11 @@ class so_target(object):
 
     def save( self, save_path="/home/rts2obs/.rts2scripts", save_file=None ):
 	print("Should be creating db now")
-        dbresp = self.create_target_db()
-        self.id = dbresp.tar_id
+        #dbresp = self.create_target_db()
+	self.id = self.create_target_api()
+	dbresp = rts2.target.Target(self.id)
+	dbresp.reload()
+	
 	commer=rts2comm()
 	commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
 
@@ -358,3 +361,5 @@ def test2():
     kwargs = {'tar_name': 'ceres', 'tar_info':fm}
     t=rts2_targets()
     t.addrow(**kwargs)
+
+
