@@ -53,7 +53,10 @@ class scripter(scriptcomm.Rts2Comm):
 
             for exp in self.script['obs_info']:
                 self.setValue("exposure", exp['exptime'] )
-                repeat = int( exp["amount"] )
+                try:
+                    repeat = int( exp["amount"] )
+                except ValueError:
+                    repeat = 1
                 self.log('W', "repeat is {}".format(repeat))
                 for ii in range(repeat):
 
