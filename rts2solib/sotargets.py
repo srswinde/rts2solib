@@ -3,13 +3,20 @@ import rts2
 import json
 import baseclasses
 import os
+
+# These are slow to import 
+# perhaps we can find a better
+# way to display Angles and units. 
+# like :https://github.com/srswinde/astro
 from astropy.coordinates import Angle
 from astropy import units as u
-from .db.mappings import rts2_targets
+
+
 try:
 	from astroquery.mpc import MPC
 except Exception as err:
 	print( err )
+
 from rts2_wwwapi import rts2comm
 
 class so_exposure:
@@ -18,6 +25,7 @@ class so_exposure:
         self.filter = filter_name
         self.exptime = exptime
         self.num_exposures = num_exposures
+        self.amount = num_exposures
 
 
     def __dictify__(self):
@@ -355,6 +363,41 @@ def test():
 
     for valname, pos in stru.iteritems():
         print(valname, fm[ pos[0]-1: pos[1] ])
+
+def ParseRADec(rastr):
+    return rastr[:2]+":"+rastr[2:4]+":"+rastr[4:]
+
+def readlotis(fname):
+
+    with open(fname) as lotisfd:
+        targets = []
+        for line_no, line in enumerate(lotisfd):
+            if line.startswith("#") or line.startswith("\n") or line.startswith(" "):
+                continue
+            aline = line.split()
+            try:
+                obsnum = int(aline[0])
+                starts_with_int=True
+            except ValueError:
+                starts_with_int = False
+
+            if starts_with_int:
+                if aline[9] != ":":
+                    raise Exception("Line no {} is bad:\n{}\n".format(line_no, line))
+                ra = ParseRADec(aline[3])
+                dec = ParseRADec(aline[4])
+                name = aline[11]
+                amount = int(aline[7]),
+                exp_time = int(aline[6]),
+                filters = list(aline[8])
+                exps = []
+                for _filter in filters:
+                    exps.append(so_exposure(_filter, exp_time, amount))
+                
+                target = stellar( name, ra, dec, exps )
+                targets.append(target)
+
+    return targets
 
 
 def test2():

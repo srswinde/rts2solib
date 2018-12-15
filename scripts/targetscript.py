@@ -25,13 +25,13 @@ class scripter(scriptcomm.Rts2Comm):
         self.filters = filter_set()
         targetid = self.getValue("current_target", "SEL")
 
-        target = rts2.target.get(targetid)
-        self.script = None
-        if len( target ) == 0:
-            self.log("E", "Can't find Target {}".format(targetid))
-            self.script = None
+#        target = rts2.target.get(targetid)
+#        self.script = None
+#        if len( target ) == 0:
+#            self.log("E", "Can't find Target {}".format(targetid))
+#            self.script = None
 
-        name = target[0][1]
+        name = self.getValue("current_name", "EXEC")
 
         scriptjson = os.path.join(self.cfg['script_path'], "{}.json".format( name ))
         self.log("I", "id {}, name {} scriptjson {}".format(targetid, name, scriptjson))
