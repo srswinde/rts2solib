@@ -1,5 +1,7 @@
-import rts2.rtsapi
+from . import rts2_wwwapi
 import json
+
+
 class filter_set:
 
 
@@ -15,11 +17,11 @@ class filter_set:
     is in the dictionary below. 
     """
 
-    config_file = "/home/rts2obs/.mtnops/flask_rts2.json"
     # Filter Name Aliases. 
     # The keyword is the name of the filter as told by 
     # the galil and RTS2, the value in the dict is a tupple
     # of possible aliases for each filter
+    # TODO read this from config
     alias = {
             "Bessell-U": ("U", 'bessell-u'),
             # "Harris-U": ("U"), 
@@ -31,15 +33,14 @@ class filter_set:
             "Open": ("Open", "open", "OPEN")  }
 
 
-    def __init__(self, filters = None, prx=None):
-        
+    def __init__( self, filters=None, prx=None ):
+        """I believe that filters and prx should always be None.
+        That is to say, we will read the filter list from rts2_wwwapi"""
+
         if filters is None:
             if prx is None:
-                with open(self.config_file) as fd:
-                    login=json.load(fd)   
-                prx = rts2.rtsapi.createProxy( "http://localhost:8889", **login )
-                filt_names = prx.getValue("W0", 'filter_names', True)
-            self._filter_list = filt_names.split()
+		    
+               self._filter_list = rts2_wwwapi.rts2comm().get_filters()
 
         elif type(filters) == list:
             self._filter_list = filters
@@ -87,10 +88,15 @@ class filter_set:
         elif type(key) == str or type(key) == unicode:
             realname = self.check_alias(key)
             if realname is not None:
-		print(realname)
                 return self._filter_list.index(realname)
         raise ValueError( "cannot find filter {}".format(key) )
-
         
 
+    def __contains__(self, item):
+        try:
+            val=self.__getitem__(item)
+        except ValueError:
+            return False
+
+        return True
 

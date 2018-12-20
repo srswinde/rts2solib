@@ -38,21 +38,40 @@ class rts2_value(object):
     def __init__(self, name, info):
         self.name = name
         self.flags = info[0]
-        self.i1 = info[1]
+        self.value = info[1]
         self.i2 = info[2]
         self.i3 = info[3]
         self.description = info[4]
         self.writable = bool(self.flagdefs()['RTS2_VALUE_WRITABLE'] & self.flags )
 
+    # TODO add the rest of the flags and 
+    # give them meaningful types
+    def __str__(self):
+        if self.is_flag( "RTS2_VALUE_STRING" ):
+            return self.value
+        else:
+            raise TypeError("RTS2 Value is not of type RTS2_VALUE_STRING")
+                
+
+    def __float__(self):
+        if self.is_flag("RTS2_VALUE_FLOAT"):
+            return float(self.value)
+        else:
+            raise TypeError("RTS2 Value is not of type RTS2_VALUE_FLOAT")
 
     def flagdefs(self):
         return dict(self.varflags)
 
+    def is_flag( self, flagkey ):
+        flagdefs = self.flagdefs() 
+
+        if (self.flags & flagdefs[flagkey] ):
+            return True
+        else:
+            return False
+
     def __repr__( self ):
         return "<rts2_value {}:\t{}>".format(self.name, self.description)
-
-    def __str__(self):
-        return self.__repr__()
 
 
     def printflags(self):
@@ -113,9 +132,13 @@ class rts2comm(object):
 
     def get_device_info_all( self ):
         """Same as device info but return data on all the devices"""
-	return json.loads( self._converse("api/getall") )
+    	return json.loads( self._converse("api/getall") )
         #return {device:self.get_device_info(device) for device in self.devlist}
            
+    def get_rts2_value( self, device, name  ):
+        devinfo = self.get_device_info( device )
+        return rts2_value(name, devinfo['d'][name] )
+
 
     def set_rts2_value(self, device, name, value):
         """
@@ -182,6 +205,9 @@ class rts2comm(object):
 
     def setscript(self, tar_id, script, cam="C0"):
         self._converse('api/change_script', id=tar_id, c=cam, s=script)
+    
+    def get_filters(self):
 
-
+        val=self.get_rts2_value("W0", "filter_names")
+        return val.value.strip().split()
 

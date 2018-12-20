@@ -3,51 +3,61 @@ import rts2
 import json
 import baseclasses
 import os
+
+# These are slow to import 
+# perhaps we can find a better
+# way to display Angles and units. 
+# like :https://github.com/srswinde/astro
 from astropy.coordinates import Angle
 from astropy import units as u
-from .db.mappings import rts2_targets
+
+
 try:
-	from astroquery.mpc import MPC
+    from astroquery.mpc import MPC
 except Exception as err:
-	print( err )
+    print( err )
+
 from rts2_wwwapi import rts2comm
 
 class so_exposure:
 
-    def __init__( self, filter_name="R", exptime=30, num_exposures=1 ):
-        self.filter = filter_name
+    def __init__( self, Filter="R", exptime=30, amount=1 ):
+        self.filter = Filter
         self.exptime = exptime
-        self.num_exposures = num_exposures
+        self.amount = amount
+        self.num_exposures = amount
 
 
     def __dictify__(self):
         thedict = {
-                "filter": self.filter,
+                "Filter": self.filter,
                 "exptime":self.exptime,
                 "amount" :self.num_exposures,
                 }
  
     def __repr__(self):
+	
         return json.dumps( self.__dictify__() )
 
 
     def __getitem__( self, key ):
+		
         return self.__dictify__()[key]
 
 class so_target(object):
     """Class to hold and save to file a target's 
-	observation parameters ie filters, number of
-	exposure etc. This is based on Sam's 
-	QueueObject class.
+    observation parameters ie filters, number of
+    exposure etc. This is based on Sam's 
+    QueueObject class.
 
-	The specifics of the observation are saved in 
-	the /home/rts2obs/.rts2scripts directory. This
-	file is later read by an rts2 script to carry
-	out the observation. 
-	"""
+    The specifics of the observation are saved in 
+    the /home/rts2obs/.rts2scripts directory. This
+    file is later read by an rts2 script to carry
+    out the observation. 
+    """
 
     def __init__(self, name, ra=None, dec=None, Type=None, tar_info=None, obs_info=None ):
-	
+    
 
         """Constructor method
 
@@ -74,7 +84,16 @@ class so_target(object):
         if obs_info is None:
             # no obs_info given use the default
             obs_info = [so_exposure()]
+        elif type(obs_info) == list:
+            proper_obs_info = []
+            for exp in obs_info:
+                proper_obs_info.append(so_exposure(**exp))
+                
+            obs_info = proper_obs_info
+        
         self.cfg = baseclasses.Config()
+    
+    
 
         self.type = Type
         self.name = name
@@ -114,10 +133,10 @@ class so_target(object):
 
     def dictify(self):
             thedict = {
-                    "name"	: self.name,
-                    "type"	: self.type,
-                    "ra"	: self.ra,
-                    "dec"	: self.dec,
+                    "name"  : self.name,
+                    #"type" : self.type,
+                    "ra"    : self.ra,
+                    "dec"   : self.dec,
                     #"id"        : self.id,
                     "obs_info" : [] 
                     
@@ -125,7 +144,7 @@ class so_target(object):
             for obs in self.observation_info:
                     thedict['obs_info'].append(
                             {
-                                    "filter"  : obs.filter,
+                                    "Filter"  : obs.filter,
                                     "exptime" : obs.exptime,
                                     "amount"  : obs.num_exposures,
                             }
@@ -140,38 +159,42 @@ class so_target(object):
         return "<so_target {name} {ra} {dec}>".format( **self.dictify() )
 
     def save( self, save_path="/home/rts2obs/.rts2scripts", save_file=None ):
-	print("Should be creating db now")
+        print("Should be creating db now")
         #dbresp = self.create_target_db()
-	self.id = self.create_target_api()
-	dbresp = rts2.target.Target(self.id)
-	dbresp.reload()
-	
-	commer=rts2comm()
-	commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
+        self.id = self.create_target_api()
+        dbresp = rts2.target.Target(self.id)
+        dbresp.reload()
+    
+        commer=rts2comm()
+        commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
 
         if save_file is None:
-                save_file = "{}.json".format( self.name )
+            save_file = "{}.json".format( self.name )
         fpath = os.path.join( save_path, save_file )
 
         with open(fpath, 'w') as fd:
-                json.dump( self.dictify(), fd, indent=2 )
+            json.dump( self.dictify(), fd, indent=2 )
 
 
 
     def create_target_api( self, prx=None ):
-	"""This uses the rts2 api to create a target
-	I would rather sqlalchemy to write directly to
-	the database. 
-	"""
+        """This uses the rts2 api to create a target
+        I would rather sqlalchemy to write directly to
+        the database. 
+        """
         if prx is None:
             rts2.createProxy( "http://localhost:8889", username=self.cfg["username"], password=self.cfg["password"] )
-
-        ra = Angle( self.ra, unit=u.hour )
-        dec = Angle( self.dec, unit=u.deg )
-        return rts2.target.create( self.name, ra.deg, dec.deg )
+        targ = rts2.target.get(self.name)
+        if len(targ) == 0:
+            ra = Angle( self.ra, unit=u.hour )
+            dec = Angle( self.dec, unit=u.deg )
+            targ = rts2.target.create( self.name, ra.deg, dec.deg )
+        else:
+            targ = targ[0][0]
+        return targ
 
     def create_target_db( self ):
-	print("create_target_db called")
+        print("create_target_db called")
         if self.type is not 'O':
             raise NotImplementedError("This type of target ({}) can not be saved to db".format(self.type))
         ra = Angle( self.ra, unit=u.hour )
@@ -180,7 +203,7 @@ class so_target(object):
         # access the database
         tar = rts2_targets()
 
-		
+        
         # we leave out the tar_id as it is 
         # the primary key. Better to let the
         # the rts2_target class handle that internally
@@ -212,10 +235,10 @@ class stellar(so_target):
         
         # access the database
         tar = rts2_targets()
-	n_samename = len(tar.query().filter(tar._rowdef.tar_name.like("{}%".format(self.name))).all())
-	if n_samename > 0:
-		
-		self.name = "{}_{:02d}".format(self.name, n_samename)
+        n_samename = len(tar.query().filter(tar._rowdef.tar_name.like("{}%".format(self.name))).all())
+        if n_samename > 0:
+        
+            self.name = "{}_{:02d}".format(self.name, n_samename)
 
         # we leave out the tar_id as it is 
         # the primary key. Better to let the
@@ -356,6 +379,45 @@ def test():
     for valname, pos in stru.iteritems():
         print(valname, fm[ pos[0]-1: pos[1] ])
 
+def ParseRADec(rastr):
+    return rastr[:2]+":"+rastr[2:4]+":"+rastr[4:]
+
+def readlotis(fname):
+
+    with open(fname) as lotisfd:
+        targets = []
+        for line_no, line in enumerate(lotisfd):
+            if line.startswith("#") or line.startswith("\n") or line.startswith(" "):
+                continue
+            aline = line.split()
+            try:
+                obsnum = int(aline[0])
+                starts_with_int=True
+            except ValueError:
+                starts_with_int = False
+
+            if starts_with_int:
+                if aline[9] != ":":
+                    raise Exception("Line no {} is bad:\n{}\n".format(line_no, line))
+                ra = ParseRADec(aline[3])
+                dec = ParseRADec(aline[4])
+                name = aline[11]
+                amount = int(aline[7]),
+                exp_time = int(aline[6]),
+                filters = list(aline[8])
+                exps = []
+                for _filter in filters:
+                    exps.append(so_exposure(_filter, exp_time, amount))
+                
+                target = stellar( name, ra, dec, exps )
+                targets.append(target)
+
+    return targets
+
+def load_from_script(target, path="/home/rts2obs/.rts2scripts"):
+    with open("{}/{}.json".format(path, target)) as jfd:
+        json_data = json.load(jfd)
+    return json_data
 
 def test2():
     kwargs = {'tar_name': 'ceres', 'tar_info':fm}

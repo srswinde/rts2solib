@@ -1,8 +1,8 @@
 import time
-from .db.mappings import rts2_targets
+#from .db.mappings import rts2_targets
 from rts2_wwwapi import rts2comm
 from baseclasses import Config
-from sotargets import so_target, asteroid, so_exposure, stellar, focusobs
+from sotargets import so_target, asteroid, so_exposure, stellar, focusobs, load_from_script
 from display_image import to_dataserver
 #from analyzefocus import focalfit
 

@@ -25,13 +25,13 @@ class scripter(scriptcomm.Rts2Comm):
         self.filters = filter_set()
         targetid = self.getValue("current_target", "SEL")
 
-        target = rts2.target.get(targetid)
-        self.script = None
-        if len( target ) == 0:
-            self.log("E", "Can't find Target {}".format(targetid))
-            self.script = None
+#        target = rts2.target.get(targetid)
+#        self.script = None
+#        if len( target ) == 0:
+#            self.log("E", "Can't find Target {}".format(targetid))
+#            self.script = None
 
-        name = target[0][1]
+        name = self.getValue("current_name", "EXEC")
 
         scriptjson = os.path.join(self.cfg['script_path'], "{}.json".format( name ))
         self.log("I", "id {}, name {} scriptjson {}".format(targetid, name, scriptjson))
@@ -49,7 +49,7 @@ class scripter(scriptcomm.Rts2Comm):
             self.log("I", "running target {name} at {ra} {dec}".format( **self.script  ) )
 
             # move the object from the center of the chip
-            self.setValue( 'OFFSET', '1m 0', 'BIG61')
+            self.setValue( 'woffs', '1m 0', 'BIG61')
 
             for exp in self.script['obs_info']:
                 self.setValue("exposure", exp['exptime'] )
@@ -60,7 +60,7 @@ class scripter(scriptcomm.Rts2Comm):
                 self.log('W', "repeat is {}".format(repeat))
                 for ii in range(repeat):
 
-                    self.setValue("filter", self.filters[ exp['filter'] ], 'W0' )
+                    self.setValue("filter", self.filters[ exp['Filter'] ], 'W0' )
                     self.log("W", "Calling exp now")
                     imgfile = self.exposure( self.before_exposure, "%b/queue/%N/%c/%t/%f" )
                     path = os.path.dirname(imgfile)
