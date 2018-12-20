@@ -2,7 +2,7 @@
 from astropy.io import fits
 from rts2 import scriptcomm
 from scottSock import scottSock
-from rts2solib import focalfit
+#from rts2solib import focalfit
 
 import os
 sepPresent = False
@@ -42,20 +42,20 @@ class ShiftFocus (scriptcomm.Rts2Comm):
 		img = self.exposure( self.before_readout, '%b/queue/%f' )
                 to_dataserver(img)
 		#call focalfit
-		focfit = focalfit(img)
-		focalvalue_fit = focfit.run()
-		flags = focfit.flags
-                if len([f for f in flags if f == 2]) > 0:
-                    self.log('I', "some fits were high ended, maybe start with the initial focal position higher")
-                if len([f for f in flags if f == 1]) > 0:
-                    self.log('I', "some fits were low ended, maybe start with the initial focal poistion lower")
-                if len([f for f in flags if f == 0]) > 0:
-                    self.log('I', str(len([f for f in flags if f == 0])) + " good fits for returned focal value")
-                if len(flags) == 0:
-                    self.log('I', "No groupings found, attempt longer exposures or different position")
-
-		self.log('I', "setting focus to "+str(focalvalue_fit))
-		self.setValue("FOC_TAR", focalvalue_fit, self.focuser)		
+		#focfit = focalfit(img)
+#		focalvalue_fit = focfit.run()
+#		flags = focfit.flags
+#                if len([f for f in flags if f == 2]) > 0:
+#                    self.log('I', "some fits were high ended, maybe start with the initial focal position higher")
+#                if len([f for f in flags if f == 1]) > 0:
+#                    self.log('I', "some fits were low ended, maybe start with the initial focal poistion lower")
+#                if len([f for f in flags if f == 0]) > 0:
+#                    self.log('I', str(len([f for f in flags if f == 0])) + " good fits for returned focal value")
+#                if len(flags) == 0:
+#                    self.log('I', "No groupings found, attempt longer exposures or different position")
+#
+#		self.log('I', "setting focus to "+str(focalvalue_fit))
+#		self.setValue("FOC_TAR", focalvalue_fit, self.focuser)		
 		self.setValue("shiftfocus", 0, "C0")
 		#to_dataserver( img )
 		

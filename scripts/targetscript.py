@@ -49,7 +49,7 @@ class scripter(scriptcomm.Rts2Comm):
             self.log("I", "running target {name} at {ra} {dec}".format( **self.script  ) )
 
             # move the object from the center of the chip
-            self.setValue( 'OFFSET', '1m 0', 'BIG61')
+            self.setValue( 'woffs', '1m 0', 'BIG61')
 
             for exp in self.script['obs_info']:
                 self.setValue("exposure", exp['exptime'] )
@@ -60,7 +60,7 @@ class scripter(scriptcomm.Rts2Comm):
                 self.log('W', "repeat is {}".format(repeat))
                 for ii in range(repeat):
 
-                    self.setValue("filter", self.filters[ exp['filter'] ], 'W0' )
+                    self.setValue("filter", self.filters[ exp['Filter'] ], 'W0' )
                     self.log("W", "Calling exp now")
                     imgfile = self.exposure( self.before_exposure, "%b/queue/%N/%c/%t/%f" )
                     path = os.path.dirname(imgfile)
