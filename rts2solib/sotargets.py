@@ -4,6 +4,7 @@ import json
 import baseclasses
 import os
 
+from rts2_wwwapi import rts2comm
 # These are slow to import 
 # perhaps we can find a better
 # way to display Angles and units. 
@@ -13,6 +14,7 @@ from astropy import units as u
 
 
 try:
+    raise Exception("NO MPC")
     from astroquery.mpc import MPC
 except Exception as err:
     print( err )
@@ -34,6 +36,7 @@ class so_exposure:
                 "exptime":self.exptime,
                 "amount" :self.num_exposures,
                 }
+        return thedict
  
     def __repr__(self):
 	
@@ -56,7 +59,7 @@ class so_target(object):
     out the observation. 
     """
 
-    def __init__(self, name, ra=None, dec=None, Type=None, tar_info=None, obs_info=None ):
+    def __init__(self, name, ra=None, dec=None, Type=None, tar_info=None, obs_info=None, artn_obs_id=None, artn_group_id=None ):
     
 
         """Constructor method
@@ -87,7 +90,10 @@ class so_target(object):
         elif type(obs_info) == list:
             proper_obs_info = []
             for exp in obs_info:
-                proper_obs_info.append(so_exposure(**exp))
+                if isinstance(exp, so_exposure):
+                    proper_obs_info.append(exp)
+                else:
+                    proper_obs_info.append(so_exposure(**exp))
                 
             obs_info = proper_obs_info
         
@@ -118,6 +124,8 @@ class so_target(object):
 
 
         self.observation_info = obs_info
+        self.obs_id = artn_obs_id
+        self.group_id = artn_obs_id
         #self.save()
         #self.id = self.create_target_db()
 
@@ -138,6 +146,8 @@ class so_target(object):
                     "ra"    : self.ra,
                     "dec"   : self.dec,
                     #"id"        : self.id,
+	                "obs_id"    : self.obs_id,
+                    "group_id": self.group_id,
                     "obs_info" : [] 
                     
             }
@@ -162,8 +172,8 @@ class so_target(object):
         print("Should be creating db now")
         #dbresp = self.create_target_db()
         self.id = self.create_target_api()
-        dbresp = rts2.target.Target(self.id)
-        dbresp.reload()
+        #dbresp = rts2.target.Target(self.id)
+        #dbresp.reload()
     
         commer=rts2comm()
         commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
@@ -182,16 +192,22 @@ class so_target(object):
         I would rather sqlalchemy to write directly to
         the database. 
         """
-        if prx is None:
-            rts2.createProxy( "http://localhost:8889", username=self.cfg["username"], password=self.cfg["password"] )
-        targ = rts2.target.get(self.name)
-        if len(targ) == 0:
+        commer = rts2comm()
+#        if prx is None:
+#            rts2.createProxy( "http://localhost:8889", username=self.cfg["username"], password=self.cfg["password"] )
+        targ = commer.get_target(self.name)
+        if targ is None: #target does not exist
             ra = Angle( self.ra, unit=u.hour )
             dec = Angle( self.dec, unit=u.deg )
-            targ = rts2.target.create( self.name, ra.deg, dec.deg )
-        else:
-            targ = targ[0][0]
-        return targ
+            targid = commer.create_target( self.name, ra.deg, dec.deg )
+
+    	else:
+            targid = targ[0]
+            
+	
+
+	    #return target id
+        return targid
 
     def create_target_db( self ):
         print("create_target_db called")
@@ -224,9 +240,9 @@ class so_target(object):
 
 class stellar(so_target):
 
-    def __init__(self, name, ra, dec, obs_info=None ):
+    def __init__(self, name, ra, dec, obs_info=None, **kwargs ):
 
-        super( self.__class__, self ).__init__(name, ra, dec, obs_info=obs_info, Type='O')
+        super( self.__class__, self ).__init__(name, ra, dec, obs_info=obs_info, Type='O', **kwargs)
 
     def create_target_db( self ):
 

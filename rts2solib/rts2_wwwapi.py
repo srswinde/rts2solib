@@ -211,3 +211,26 @@ class rts2comm(object):
         val=self.get_rts2_value("W0", "filter_names")
         return val.value.strip().split()
 
+    def get_target(self, name ):
+        
+        if(type(name) == int):
+            target = self._converse("api/tbyid", id=name)
+        else:
+            target = self._converse("api/tbyname", n=name)
+
+        if 'd' not in target:
+            raise ValueError("RTS2 cannot find target {}. Create with rts2com.create_target".format(name))
+
+    	if len(target['d']) == 0:
+            retn = None
+        else:
+            retn = target['d']
+
+		
+        return retn
+
+    def create_target(self, name, ra, dec):
+        return self._converse('api/create_target', tn=name, ra=ra, dec=dec)['id']
+        
+
+        return target

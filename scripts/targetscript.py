@@ -25,6 +25,7 @@ class scripter(scriptcomm.Rts2Comm):
         self.filters = filter_set()
         targetid = self.getValue("current_target", "SEL")
 
+        self.script = None
 #        target = rts2.target.get(targetid)
 #        self.script = None
 #        if len( target ) == 0:
@@ -35,6 +36,7 @@ class scripter(scriptcomm.Rts2Comm):
 
         scriptjson = os.path.join(self.cfg['script_path'], "{}.json".format( name ))
         self.log("I", "id {}, name {} scriptjson {}".format(targetid, name, scriptjson))
+        self.log("I", "DOES THIS CHANGE IT?????????")
         if os.path.exists(scriptjson):
             with open(scriptjson, 'r') as jsonfd:
                 self.script = json.load( jsonfd )  
@@ -61,18 +63,26 @@ class scripter(scriptcomm.Rts2Comm):
                 for ii in range(repeat):
 
                     self.setValue("filter", self.filters[ exp['Filter'] ], 'W0' )
-                    self.log("W", "Calling exp now")
+                    self.log("W", "Calling exp right now")
                     imgfile = self.exposure( self.before_exposure, "%b/queue/%N/%c/%t/%f" )
+                    self.log("W", "did we get here")
                     path = os.path.dirname(imgfile)
                     basename = os.path.basename(imgfile)
-                    to_dataserver(imgfile, basename )
+                    try:
+                        to_dataserver(imgfile, basename )
+                    except Exception as err:
+                        self.log("W", "Could not send to dataserver {}".format(err))
 
             if not self.has_exposed:
                 self.setValue("exposure", 30 )
                 imgfile = self.exposure(self.before_exposure)
                 path = os.path.dirname(imgfile)
                 basename = os.path.basename(imgfile)
-                to_dataserver(imgfile, basename )
+                try:
+                    to_dataserver(imgfile, basename )
+                except Exception as err:
+                    self.log("W", "Could not send to dataserver {}".format(err))
+
 
         else:
             self.log("E", "there doesn't seem to be script file taking useless 30 sec exposure")
@@ -81,7 +91,11 @@ class scripter(scriptcomm.Rts2Comm):
             imgfile = self.exposure(self.before_exposure, "%b/queue/%N/%c/%t/%f" )
             path = os.path.dirname(imgfile)
             basename = os.path.basename(imgfile)
-            to_dataserver(imgfile, basename )
+            try:
+                to_dataserver(imgfile, basename )
+            except Exception as err:
+                self.log("W", "Could not send to dataserver {}".format(err))
+
 
 
             self.log("W",imgfile )

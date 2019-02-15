@@ -96,6 +96,7 @@ class abstract_row(object):
         are considered siblings. Again not sure why."""
         pass
 
+    
 
 class dbtable(object):
 
@@ -109,6 +110,7 @@ class dbtable(object):
             tblname = self.tblname
         else:
             tblname = self.__class__.tblname
+
 
         # On the fly class creation.
         # the sqlalchemy orm mapper depends on
@@ -129,6 +131,9 @@ class dbtable(object):
         else:
             tblname=self.__class__.__name__
 
+        if hasattr(self, "_primary_key"):
+            tbl = Table(tblname, metadata, Column(self._primary_key, Integer, primary_key=True), autoload=True)
+		
         if tblname == "scripts":#scripts doesnt have primary key so override it.
             tbl = Table(tblname, metadata, Column("tar_id", Integer, primary_key=True), autoload=True)
         else:
@@ -230,9 +235,15 @@ class dbtable(object):
         session = sessionmaker( bind=engine )
         return session()
 
+class message(dbtable):
+    tblname = "message"
+    _primary_key = "message_time"
+
+class rts2_images(dbtable):
+    tblname = "images"
     
-
-
+class rts2_observations(dbtable):
+    tblname = "observations"
 
 class rts2_targets( dbtable ):
     tblname='targets'

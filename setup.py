@@ -8,7 +8,7 @@ setup(name='rts2solib',
       description='RTS2 python library for steward observatory',
       author='Scott Swindell',
       author_email='scottswindell@email.arizona.edu',
-      scripts = ['scripts/targetscript.py'],
+      scripts = ['scripts/targetscript.py', "scripts/rts2_startup_settings.py"],
       packages = find_packages(),
      )
 

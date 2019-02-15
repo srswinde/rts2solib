@@ -1,6 +1,7 @@
 import os
 from astropy.io import fits
 from scottSock import scottSock
+import sys
 
 def to_dataserver( fname, outfile='test.fits', clobber=True ):
 
@@ -11,9 +12,12 @@ def to_dataserver( fname, outfile='test.fits', clobber=True ):
         height = 0
         for ext in fitsfd:
                 if hasattr( ext, 'data' ):
-                        if ext.data is not None:
-                                width+=ext.data.shape[0]
-                                height+=ext.data.shape[1]
+                        if ext.data is not None or ext.data is not []:
+				try:
+	                                width+=ext.data.shape[0]
+        	                        height+=ext.data.shape[1]
+				except Exception as err:
+					print >> sys.stderr, "err is {} ext.data is {}".format(err, ext.data)
 
         fitsfd.close()
         fsize = os.stat(fname).st_size
