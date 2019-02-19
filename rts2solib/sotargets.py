@@ -129,6 +129,13 @@ class so_target(object):
         #self.save()
         #self.id = self.create_target_db()
 
+    def reload(self):
+        commer=rts2comm()
+        commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
+       
+        targ = commer.get_target(self.name)
+        self.id = targ[0]
+        self.ra = targ[1]
 
     def outputobjectinfo(self):
             print("Queue Object: {}, {}".format(self.name, self.type))
@@ -169,11 +176,9 @@ class so_target(object):
         return "<so_target {name} {ra} {dec}>".format( **self.dictify() )
 
     def save( self, save_path="/home/rts2obs/.rts2scripts", save_file=None ):
-        print("Should be creating db now")
-        #dbresp = self.create_target_db()
+        """Save target script to rts2scripts"""
+
         self.id = self.create_target_api()
-        #dbresp = rts2.target.Target(self.id)
-        #dbresp.reload()
     
         commer=rts2comm()
         commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
@@ -188,13 +193,8 @@ class so_target(object):
 
 
     def create_target_api( self, prx=None ):
-        """This uses the rts2 api to create a target
-        I would rather sqlalchemy to write directly to
-        the database. 
-        """
+        """Create the rts2 target in the database"""
         commer = rts2comm()
-#        if prx is None:
-#            rts2.createProxy( "http://localhost:8889", username=self.cfg["username"], password=self.cfg["password"] )
         targ = commer.get_target(self.name)
         if targ is None: #target does not exist
             ra = Angle( self.ra, unit=u.hour )

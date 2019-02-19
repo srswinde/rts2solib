@@ -1,9 +1,9 @@
-
 from __future__ import print_function
+from rtsapi import JSONProxy
 import requests
 import json
 from .baseclasses import Config
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 import re
 
 """This module is a wrapper for the HTTP/JSON based rts2api
@@ -80,7 +80,8 @@ class rts2_value(object):
 
 
 
-class rts2comm(object):
+
+class rts2comm(JSONProxy):
 
     def __init__(self, debug=False):
         self.cfg = Config()
@@ -88,6 +89,7 @@ class rts2comm(object):
         self.baseurl = self.cfg['rts2url']
         self.auth = (self.cfg["username"], self.cfg['password'] )
         self.debug = debug
+        JSONProxy.__init__(self, self.baseurl, username=self.cfg["username"], password=self.cfg['password'] )
 
         self.flags = {
             "RTS2_VALUE_WRITABLE" : 0x02000000,
@@ -132,9 +134,14 @@ class rts2comm(object):
 
     def get_device_info_all( self ):
         """Same as device info but return data on all the devices"""
-    	return json.loads( self._converse("api/getall") )
+        return json.loads( self._converse("api/getall") )
         #return {device:self.get_device_info(device) for device in self.devlist}
-           
+
+
+
+    def getDevicesByType(self, device_type ):
+        return self._get( '/api/devbytype', t=device_type )
+
     def get_rts2_value( self, device, name  ):
         devinfo = self.get_device_info( device )
         return rts2_value(name, devinfo['d'][name] )
@@ -164,9 +171,13 @@ class rts2comm(object):
     def _converse( self, route, **kwargs ):
         url = "{}/{}".format(self.baseurl, route)
         r=requests.get(url, params=kwargs, auth=self.auth)
-        if self.debug:
-            print(r.url)
-        return json.loads(r.text)
+        try:
+           retn = r.json()
+        except ValueError:
+            raise ValueError( "Could not serialize JSON \n{}".format( r.text ) )
+            
+
+        return retn
 
     def _set(self, **kwargs):
         return self._converse( 'api/set', **kwargs )
@@ -183,7 +194,7 @@ class rts2comm(object):
     def get_state( self ):
         url = "{}/switchstate".format( self.cfg['rts2url'] )
         r=requests.get(url, auth=self.auth)
-        
+
         soup = BeautifulSoup(r.text, 'lxml')
         regex = re.compile('Current state is:\s*(.*)$')
         for ptag in soup.find_all('p'):
@@ -206,6 +217,7 @@ class rts2comm(object):
     def setscript(self, tar_id, script, cam="C0"):
         self._converse('api/change_script', id=tar_id, c=cam, s=script)
     
+
     def get_filters(self):
 
         val=self.get_rts2_value("W0", "filter_names")
@@ -231,6 +243,10 @@ class rts2comm(object):
 
     def create_target(self, name, ra, dec):
         return self._converse('api/create_target', tn=name, ra=ra, dec=dec)['id']
-        
 
-        return target
+
+#    def executeCommand(self, device, command, async=False):
+#        ret = self._converse( '/api/cmd', d=device, c=command, e=1, async=False)
+#        #self.devices[device] = ret['d']
+#        return ret['ret']
+#
