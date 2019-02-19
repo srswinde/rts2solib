@@ -1,10 +1,8 @@
-from __future__ import print_function
-import rts2
 import json
-import baseclasses
+from . import baseclasses
 import os
 
-from rts2_wwwapi import rts2comm
+from .rts2_wwwapi import rts2comm
 # These are slow to import 
 # perhaps we can find a better
 # way to display Angles and units. 
@@ -19,7 +17,7 @@ try:
 except Exception as err:
     print( err )
 
-from rts2_wwwapi import rts2comm
+from .rts2_wwwapi import rts2comm
 
 class so_exposure:
 
@@ -37,14 +35,14 @@ class so_exposure:
                 "amount" :self.num_exposures,
                 }
         return thedict
- 
+
     def __repr__(self):
-	
+
         return json.dumps( self.__dictify__() )
 
 
     def __getitem__( self, key ):
-		
+
         return self.__dictify__()[key]
 
 class so_target(object):
@@ -60,7 +58,7 @@ class so_target(object):
     """
 
     def __init__(self, name, ra=None, dec=None, Type=None, tar_info=None, obs_info=None, artn_obs_id=None, artn_group_id=None ):
-    
+
 
         """Constructor method
 
@@ -94,12 +92,12 @@ class so_target(object):
                     proper_obs_info.append(exp)
                 else:
                     proper_obs_info.append(so_exposure(**exp))
-                
+
             obs_info = proper_obs_info
-        
+
         self.cfg = baseclasses.Config()
-    
-    
+
+
 
         self.type = Type
         self.name = name
@@ -132,7 +130,7 @@ class so_target(object):
     def reload(self):
         commer=rts2comm()
         commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
-       
+
         targ = commer.get_target(self.name)
         self.id = targ[0]
         self.ra = targ[1]
@@ -153,10 +151,10 @@ class so_target(object):
                     "ra"    : self.ra,
                     "dec"   : self.dec,
                     #"id"        : self.id,
-	                "obs_id"    : self.obs_id,
+                    "obs_id"    : self.obs_id,
                     "group_id": self.group_id,
                     "obs_info" : [] 
-                    
+
             }
             for obs in self.observation_info:
                     thedict['obs_info'].append(
@@ -179,7 +177,7 @@ class so_target(object):
         """Save target script to rts2scripts"""
 
         self.id = self.create_target_api()
-    
+
         commer=rts2comm()
         commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
 
@@ -201,12 +199,11 @@ class so_target(object):
             dec = Angle( self.dec, unit=u.deg )
             targid = commer.create_target( self.name, ra.deg, dec.deg )
 
-    	else:
+        else:
             targid = targ[0]
-            
-	
 
-	    #return target id
+
+
         return targid
 
     def create_target_db( self ):
@@ -215,11 +212,11 @@ class so_target(object):
             raise NotImplementedError("This type of target ({}) can not be saved to db".format(self.type))
         ra = Angle( self.ra, unit=u.hour )
         dec = Angle( self.dec, unit=u.deg )
-        
+
         # access the database
         tar = rts2_targets()
 
-        
+
         # we leave out the tar_id as it is 
         # the primary key. Better to let the
         # the rts2_target class handle that internally
@@ -248,12 +245,12 @@ class stellar(so_target):
 
         ra = Angle( self.ra, unit=u.hour )
         dec = Angle( self.dec, unit=u.deg )
-        
+
         # access the database
         tar = rts2_targets()
         n_samename = len(tar.query().filter(tar._rowdef.tar_name.like("{}%".format(self.name))).all())
         if n_samename > 0:
-        
+
             self.name = "{}_{:02d}".format(self.name, n_samename)
 
         # we leave out the tar_id as it is 
@@ -310,7 +307,7 @@ class asteroid(so_target):
             }
 
         thestr = [' ']*140
-        for fkey, finfo in stru.iteritems():
+        for fkey, finfo in stru.items():
             fpos = finfo[:2]
             fmt = finfo[2]
             numchars = ( fpos[1] - fpos[0] )+1
@@ -348,18 +345,18 @@ class asteroid(so_target):
                     fval = strval
 
                 listval = list( fval )
-                
+
                 diff = (numchars - len( fval ))
-                
+
                 if diff > 0:
-                    
+
                     padded = diff *[' ']
                     padded.extend(listval)
                     listval = padded
 
                 elif diff < 0:
                     raise ValueError("{}'s value, {}, has too many chars ({}) should be < {}".format(fkey, fval, len(fval), numchars))
-                    
+
 
 
                 thestr[fpos[0]-1:fpos[1]] = listval 
@@ -379,7 +376,7 @@ class asteroid(so_target):
             'type_id':self.type
         }
         tar.addrow(**kwargs)
-                
+
 
 
 
@@ -392,7 +389,7 @@ class focusobs(so_target):
 
 def test():
 
-    for valname, pos in stru.iteritems():
+    for valname, pos in stru.items():
         print(valname, fm[ pos[0]-1: pos[1] ])
 
 def ParseRADec(rastr):
@@ -424,7 +421,7 @@ def readlotis(fname):
                 exps = []
                 for _filter in filters:
                     exps.append(so_exposure(_filter, exp_time, amount))
-                
+
                 target = stellar( name, ra, dec, exps )
                 targets.append(target)
 

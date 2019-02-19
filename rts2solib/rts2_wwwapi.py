@@ -1,5 +1,5 @@
-from __future__ import print_function
-from rtsapi import JSONProxy
+
+from .rtsapi import JSONProxy
 import requests
 import json
 from .baseclasses import Config
@@ -75,7 +75,7 @@ class rts2_value(object):
 
 
     def printflags(self):
-        for fname, hx in dict(self.varflags).iteritems():
+        for fname, hx in dict(self.varflags).items():
             print(fname, (self.flags & hx) == hx )
 
 
@@ -87,6 +87,9 @@ class rts2comm(JSONProxy):
         self.cfg = Config()
         self.devlist = self.cfg['device_list']
         self.baseurl = self.cfg['rts2url']
+
+        # for compatability with JSONProxy
+        self.url = self.baseurl
         self.auth = (self.cfg["username"], self.cfg['password'] )
         self.debug = debug
         JSONProxy.__init__(self, self.baseurl, username=self.cfg["username"], password=self.cfg['password'] )
@@ -233,7 +236,7 @@ class rts2comm(JSONProxy):
         if 'd' not in target:
             raise ValueError("RTS2 cannot find target {}. Create with rts2com.create_target".format(name))
 
-    	if len(target['d']) == 0:
+        if len(target['d']) == 0:
             retn = None
         else:
             retn = target['d']
