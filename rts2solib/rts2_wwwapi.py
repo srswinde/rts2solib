@@ -1,4 +1,3 @@
-
 from .rtsapi import JSONProxy
 import requests
 import json

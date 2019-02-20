@@ -199,16 +199,18 @@ class so_target(object):
         """Create the rts2 target in the database"""
         commer = rts2comm()
         try:
-            targ = commer.get_target(self.name)
-        except ValueError as err:
-            print(err)
-            # Target not in the database
-            targ = None
+            targ = commer.get_target(self.name)[0]
+        except Exception as err:
+            if self.name.endswith("target"):
+                raise NameError("Target can not end with `target'")
+            else:
+                raise
 
         if targ is None: #target does not exist
             ra = Angle( self.ra, unit=u.hour )
             dec = Angle( self.dec, unit=u.deg )
-            targid = commer.create_target( self.name, ra.deg, dec.deg )
+            
+            targid = commer.create_target( self.name, ra.deg, dec.deg )[0]
 
         else:
             targid = targ[0]
