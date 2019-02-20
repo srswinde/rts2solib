@@ -44,8 +44,17 @@ print(test_target.id)
 # now we create the night queue it is called plan.
 q = Queue( "plan" )
 q.add_target(test_target.id)
-q.load()
-q.save()
+
+# if you have more than target you can add them here
+# with 
+# q.add_target(test_target2.id)
+# q.add_target(test_target3.id)
+# q.add_target(test_target4.id)
+# ...
+
+
+q.load() # load the added targets to a list
+q.save() # give rts2 the queue. 
 
 
 
