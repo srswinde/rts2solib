@@ -80,6 +80,11 @@ class so_target(object):
             obs_info: list (of so_exposure)
                 Information specific to the observation ie filters, exposure time etc. 
 
+            artn_obs_id: 
+                the ARTN observation ID
+
+            artn_group_id:
+                the ARTN group ID
         """
 
         if obs_info is None:
@@ -193,7 +198,13 @@ class so_target(object):
     def create_target_api( self, prx=None ):
         """Create the rts2 target in the database"""
         commer = rts2comm()
-        targ = commer.get_target(self.name)
+        try:
+            targ = commer.get_target(self.name)
+        except ValueError as err:
+            print(err)
+            # Target not in the database
+            targ = None
+
         if targ is None: #target does not exist
             ra = Angle( self.ra, unit=u.hour )
             dec = Angle( self.dec, unit=u.deg )
