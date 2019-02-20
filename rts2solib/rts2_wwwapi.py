@@ -177,7 +177,7 @@ class rts2comm(JSONProxy):
         try:
            retn = r.json()
         except ValueError:
-            raise ValueError( "Could not serialize JSON \n{}".format( r.text ) )
+            raise ValueError( "Could not serialize JSON \n{}\n url is {}".format( r.text, r.url ) )
             
 
         return retn

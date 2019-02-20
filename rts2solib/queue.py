@@ -104,11 +104,11 @@ class QueueEntry:
 
 class Queue:
     """Queue abstraction. Provides methods for operation on the queue."""
-    def __init__(self,jsonProxy,name,service=None,queueType=QueueEntry):
+    def __init__(self, name,service="SEL",queueType=QueueEntry):
         """Create new queue. Service parameters specify RTS2 service name. Optional queueType allow
         user to overwrite QueueEntry elements created for queue entries."""
         self.name = name
-        self.jsonProxy = jsonProxy
+        self.jsonProxy = rts2comm()
         self.service = service
         self.entries = []
         self.queueing = None
