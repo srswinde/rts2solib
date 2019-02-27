@@ -17,8 +17,8 @@
 # 51 Franklin Street, Fifth Floor
 # Boston, MA 02110-1301 USA
 
-from future import standard_library
-standard_library.install_aliases()
+# from __future__ import standard_library
+# standard_library.install_aliases()
 import requests
 
 try:
@@ -378,31 +378,31 @@ class JSONProxy(Rts2JSON):
                 self.selection_cache[device][name] = rep
             return rep
 
-    def setValue(self, device, name, value, async=None):
-        values = {'d': device, 'n': name, 'v': value, 'async': async}
-        if async:
-            values['async'] = async
+    def setValue(self, device, name, value, Async=None):
+        values = {'d': device, 'n': name, 'v': value, 'async': Async}
+        if Async:
+            values['async'] = Async
         self.loadJson('/api/set', values)
 
     def incValue(self, device, name, value):
         return self.loadJson('/api/inc', {'d': device, 'n': name, 'v': value})
 
-    def setValues(self, values, device=None, async=None):
+    def setValues(self, values, device=None, Async=None):
         if device:
             values = dict([('{0}.{1}'.format(device, x[0]), x[1])
                           for x in list(values.items())])
-        if async:
-            values['async'] = async
+        if Async:
+            values['async'] = Async
         self.loadJson('/api/mset', values)
 
-    def executeCommand(self, device, command, async=False ):
+    def executeCommand(self, device, command, Async=False ):
         ret = self.loadJson(
             '/api/cmd',
             {
-                'd': device, 'c': command, 'e': 1, 'async': 1 if async else 0
+                'd': device, 'c': command, 'e': 1, 'async': 1 if Async else 0
             }
         )
-        if async:
+        if Async:
             return 0
         self.devices[device] = ret['d']
         return ret['ret']

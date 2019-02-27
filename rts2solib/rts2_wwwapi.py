@@ -136,7 +136,7 @@ class rts2comm(JSONProxy):
 
     def get_device_info_all( self ):
         """Same as device info but return data on all the devices"""
-        return json.loads( self._converse("api/getall") )
+        return self._converse("api/getall")
         #return {device:self.get_device_info(device) for device in self.devlist}
 
 
