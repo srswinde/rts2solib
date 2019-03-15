@@ -7,7 +7,12 @@ from rts2 import scriptcomm
 from rts2solib.big61filters import filter_set
 from rts2solib import Config
 from rts2solib import to_dataserver
+import requests
 import os
+from sqlalchemy import create_engine, MetaData
+from sqlalchemy.orm import sessionmaker
+
+
 
 
 class scripter(scriptcomm.Rts2Comm):
@@ -34,12 +39,22 @@ class scripter(scriptcomm.Rts2Comm):
 
         name = self.getValue("current_name", "EXEC")
 
-        scriptjson = os.path.join(self.cfg['script_path'], "{}.json".format( name ))
-        self.log("I", "id {}, name {} scriptjson {}".format(targetid, name, scriptjson))
-        self.log("I", "DOES THIS CHANGE IT?????????")
-        if os.path.exists(scriptjson):
-            with open(scriptjson, 'r') as jsonfd:
-                self.script = json.load( jsonfd )  
+        orp_dbpath = self.cfg[]
+        engine = create_engine( self.cfg["orp_dbpath"] )
+        meta = MetaData()
+        meta.reflect(bind=engine)
+        obsreqs = meta.tables["obsreqs"]
+        session = sessionmaker(bind=engine)()
+        db_resp = session.query(obsreqs).filter(obsreqs.columns["rts2_id"]==targetid)
+        self.script = db_resp[0].rts2_doc
+        
+
+#        scriptjson = os.path.join(self.cfg['script_path'], "{}.json".format( name ))
+#        self.log("I", "id {}, name {} scriptjson {}".format(targetid, name, scriptjson))
+#        self.log("I", "DOES THIS CHANGE IT?????????")
+#        if os.path.exists(scriptjson):
+#            with open(scriptjson, 'r') as jsonfd:
+#                self.script = json.load( jsonfd )  
             
         self.has_exposed = False
  

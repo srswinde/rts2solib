@@ -2,7 +2,7 @@ from .rtsapi import JSONProxy
 import requests
 import json
 from .baseclasses import Config
-# from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 import re
 
 """This module is a wrapper for the HTTP/JSON based rts2api
