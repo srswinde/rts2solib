@@ -39,7 +39,6 @@ class scripter(scriptcomm.Rts2Comm):
 
         name = self.getValue("current_name", "EXEC")
 
-        orp_dbpath = self.cfg[]
         engine = create_engine( self.cfg["orp_dbpath"] )
         meta = MetaData()
         meta.reflect(bind=engine)
@@ -47,6 +46,7 @@ class scripter(scriptcomm.Rts2Comm):
         session = sessionmaker(bind=engine)()
         db_resp = session.query(obsreqs).filter(obsreqs.columns["rts2_id"]==targetid)
         self.script = db_resp[0].rts2_doc
+        
         
 
 #        scriptjson = os.path.join(self.cfg['script_path'], "{}.json".format( name ))
@@ -67,7 +67,11 @@ class scripter(scriptcomm.Rts2Comm):
 
             # move the object from the center of the chip
             self.setValue( 'woffs', '1m 0', 'BIG61')
+            total_exposures = 0
+            for exp in self.script['obs_info']:
+                total_exposures += int( exp["amount"] )
 
+            exp_num = 0
             for exp in self.script['obs_info']:
                 self.setValue("exposure", exp['exptime'] )
                 try:
@@ -78,8 +82,11 @@ class scripter(scriptcomm.Rts2Comm):
                 for ii in range(repeat):
 
                     self.setValue("filter", self.filters[ exp['Filter'] ], 'W0' )
-                    self.log("W", "Calling exp right now")
+                    exp_num+=1
+                    self.log("W", "Calling exp {} of {}".format(exp_num, total_exposures) )
+                    self.log("W", "exp string is %b/queue/%N/%c/%t/%f" )
                     imgfile = self.exposure( self.before_exposure, "%b/queue/%N/%c/%t/%f" )
+                    self.log("W", "imgfile is {}".format(imgfile))
                     self.log("W", "did we get here")
                     path = os.path.dirname(imgfile)
                     basename = os.path.basename(imgfile)

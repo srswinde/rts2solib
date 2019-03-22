@@ -2,6 +2,27 @@ import os
 from astropy.io import fits
 from scottSock import scottSock
 import sys
+from PIL import Image
+import numpy as np
+
+from PIL import ImageFont
+from PIL import ImageDraw 
+
+
+def to_jpg(fname):
+    fd = fits.open(fname)
+
+    arr = np.hstack((fd[1].data, fd[2].data))
+    arr = np.log(arr)
+    arr = arr/arr.max()
+    arr = (255*arr).astype("uint8")
+    img = Image.fromarray(arr)
+    draw = ImageDraw.Draw(img)
+    #font = ImageFont.truetype("sans-serif.ttf", 16)
+    draw.text((0, 0),fname.split("/")[-1],(255,255,255))
+    return img
+
+
 
 def to_dataserver( fname, outfile='test.fits', clobber=True ):
 
@@ -17,7 +38,7 @@ def to_dataserver( fname, outfile='test.fits', clobber=True ):
                     width+=ext.data.shape[0]
                     height+=ext.data.shape[1]
                 except Exception as err:
-                    print >> sys.stderr, "err is {} ext.data is {}".format(err, ext.data)
+                    print(" log E err is {} ext.data is {}".format(err, ext.data))
 
     fitsfd.close()
     fsize = os.stat(fname).st_size

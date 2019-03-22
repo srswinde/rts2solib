@@ -3,7 +3,7 @@ import time
 
 
 def main():
-    time.sleep(45)
+    #time.sleep(45)
     commer = rts2comm()
     commer.set_rts2_value('SEL', "queue_only", True)
     commer.set_rts2_value("SEL", "plan_queing", 3) 

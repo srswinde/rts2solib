@@ -65,7 +65,7 @@ class filter_set:
 
     def check_alias( self, alias ):
 
-        for name, aliases in self.alias.iteritems():
+        for name, aliases in self.alias.items():
             if alias == name:
                 return alias
 

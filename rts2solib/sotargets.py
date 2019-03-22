@@ -90,6 +90,7 @@ class so_target(object):
         if obs_info is None:
             # no obs_info given use the default
             obs_info = [so_exposure()]
+
         elif type(obs_info) == list:
             proper_obs_info = []
             for exp in obs_info:
