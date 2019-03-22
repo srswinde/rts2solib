@@ -2,6 +2,18 @@ import os
 from astropy.io import fits
 from scottSock import scottSock
 import sys
+from PIL import Image
+import numpy as np
+
+def to_jpg(fname):
+    fd = fits.open(fname)
+
+    arr = np.hstack((fd[1].data, fd[2].data))
+    arr = np.log(arr)
+    arr = arr/arr.max()
+    arr = (255*arr).astype("uint8")
+    return img
+
 
 def to_dataserver( fname, outfile='test.fits', clobber=True ):
 

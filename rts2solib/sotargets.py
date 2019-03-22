@@ -13,11 +13,6 @@ from astropy.coordinates import Angle
 from astropy import units as u
 
 
-try:
-    raise Exception("NO MPC")
-    from astroquery.mpc import MPC
-except Exception as err:
-    print( err )
 
 from rts2_wwwapi import rts2comm
 
