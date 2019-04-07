@@ -11,11 +11,11 @@ from astropy.coordinates import Angle
 from astropy import units as u
 
 
-try:
-    raise Exception("NO MPC")
-    from astroquery.mpc import MPC
-except Exception as err:
-    print( err )
+#try:
+#    raise Exception("NO MPC")
+#    from astroquery.mpc import MPC
+#except Exception as err:
+#    print( err )
 
 from .rts2_wwwapi import rts2comm
 
@@ -288,6 +288,7 @@ class stellar(so_target):
 class asteroid(so_target):
 
     def __init__( self, name, jsondata=None, mpc=None, obs_info=None ):
+        raise NotImplementedError("asteroid has not been implemented yet")
         mpc = MPC()
         result = mpc.query_object_async( "asteroid", name=name )
         
