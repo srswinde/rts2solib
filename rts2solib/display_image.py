@@ -2,14 +2,23 @@ import os
 from astropy.io import fits
 from scottSock import scottSock
 import sys
-from PIL import Image
 import numpy as np
 
-from PIL import ImageFont
-from PIL import ImageDraw 
+
+NOPIL = False
+try:
+    from PIL import Image
+    from PIL import ImageFont
+    from PIL import ImageDraw
+
+except Exception as err:
+    NOPIL=True
 
 
 def to_jpg(fname):
+    if NOPIL:
+        raise ImportError("This function is not available b/c we can not import PIL")
+
     fd = fits.open(fname)
 
     arr = np.hstack((fd[1].data, fd[2].data))
