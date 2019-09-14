@@ -45,6 +45,7 @@ class scripter(scriptcomm.Rts2Comm):
         obsreqs = meta.tables["obsreqs"]
         session = sessionmaker(bind=engine)()
         db_resp = session.query(obsreqs).filter(obsreqs.columns["rts2_id"]==targetid)
+        scriptcomm.log('I','rts2_id {0} resp {1}'.format(targetid, len(db_resp)))
         self.script = db_resp[0].rts2_doc
         self.setValue('ObservationID', db_resp[0].observation_id, "C0")
         self.setValue('GroupID', db_resp[0].group_id, "C0")

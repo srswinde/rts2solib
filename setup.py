@@ -9,6 +9,7 @@ setup(name='rts2solib',
       author='Scott Swindell',
       author_email='scottswindell@email.arizona.edu',
       scripts = ['scripts/targetscript.py', "scripts/rts2_startup_settings.py"],
+      #scripts = ["scripts/rts2_startup_settings.py"],
       packages = find_packages(),
      )
 

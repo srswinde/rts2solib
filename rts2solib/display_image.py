@@ -7,20 +7,27 @@ import numpy as np
 
 from PIL import ImageFont
 from PIL import ImageDraw 
-
+from io import BytesIO
+import tempfile
 
 def to_jpg(fname):
     fd = fits.open(fname)
 
+    
     arr = np.hstack((fd[1].data, fd[2].data))
+    fd.close()
     arr = np.log(arr)
     arr = arr/arr.max()
     arr = (255*arr).astype("uint8")
     img = Image.fromarray(arr)
     draw = ImageDraw.Draw(img)
     #font = ImageFont.truetype("sans-serif.ttf", 16)
-    draw.text((0, 0),fname.split("/")[-1],(255,255,255))
-    return img
+    #draw.text((0, 0),fname.split("/")[-1],(255,255,255))
+    imdata = BytesIO()
+    #imdata = tempfile.NamedTemporaryFile()
+    img.save(imdata, 'JPEG', quality=70)
+    imdata.seek(0)
+    return imdata
 
 
 
