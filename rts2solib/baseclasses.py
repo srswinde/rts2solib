@@ -8,7 +8,8 @@ class Config( object ):
     def __init__( self ):
         rts2path = os.environ.get("RTS2SOLIBPATH")
         if rts2path is None:
-            fname = Path( "/home/rts2obs", '.mtnops', 'rts2_config.json' )
+            #TODO stop hardcoding directory names
+            fname = Path( "/home/scott", '.mtnops', 'rts2_config.json' )
         else:
             fname = Path( rts2path, 'rts2_config.json' )
 
