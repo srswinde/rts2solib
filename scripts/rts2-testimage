@@ -1,0 +1,45 @@
+#!/usr/bin/python -W ignore
+
+
+from __future__ import print_function
+from rts2 import scriptcomm
+from astropy.io import fits
+from scottSock import scottSock
+import sys
+import os
+import time
+from rts2solib import to_dataserver
+
+class TestImage (scriptcomm.Rts2Comm):
+    """Take and process focussing data."""
+
+    def __init__( self ):
+        scriptcomm.Rts2Comm.__init__(self)
+        self.focuser = "F0"
+
+    def test_image( self ):
+        try:
+            #time.sleep(0.5)
+            self.setValue("SHUTTER", 0, "C0")
+            self.log('I', 'Taking image')
+            img1 = self.exposure( self.before_readout, "/home/rts2obs/%f" )
+            #self.log("I", "SENDING TO DATASERVER")
+            to_dataserver(img1, "test.fits")
+        except Exception as err:
+            
+            self.log("I", "err is {} ".format(err))
+	
+
+    def before_readout(self):
+        pass
+        #self.log( 'I', 'just Before readout' )
+
+    def run( self ):
+        self.test_image()
+
+
+
+f=TestImage()
+#
+f.run()
+#
