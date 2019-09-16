@@ -135,7 +135,10 @@ class so_target(object):
 
     def reload(self):
         commer=rts2comm()
-        commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
+
+        # the following line should be handled rts2.ini on local machine for
+        # now
+        #commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
 
         targ = commer.get_target(self.name)
         self.id = targ[0]
@@ -185,7 +188,8 @@ class so_target(object):
         self.id = self.create_target_api()
 
         commer=rts2comm()
-        commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
+	    # the following line should be handle by rts2.ini and not here. 
+        #commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
 
         if save_file is None:
             save_file = "{}.json".format( self.name )

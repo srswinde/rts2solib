@@ -11,9 +11,9 @@ import requests
 import os
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
-
-
-
+from telescope import kuiper
+import datetime
+import math
 
 class scripter(scriptcomm.Rts2Comm):
     """
@@ -29,7 +29,8 @@ class scripter(scriptcomm.Rts2Comm):
         self.cfg = Config()
         self.filters = filter_set()
         targetid = self.getValue("current_target", "SEL")
-
+        self.tel = kuiper()
+        self.tel.comBIAS("OFF")
         self.script = None
 #        target = rts2.target.get(targetid)
 #        self.script = None
@@ -45,11 +46,51 @@ class scripter(scriptcomm.Rts2Comm):
         obsreqs = meta.tables["obsreqs"]
         session = sessionmaker(bind=engine)()
         db_resp = session.query(obsreqs).filter(obsreqs.columns["rts2_id"]==targetid)
-        scriptcomm.log('I','rts2_id {0} resp {1}'.format(targetid, len(db_resp)))
         self.script = db_resp[0].rts2_doc
         self.setValue('ObservationID', db_resp[0].observation_id, "C0")
         self.setValue('GroupID', db_resp[0].group_id, "C0")
 
+        if db_resp[0].non_sidereal:
+            self.rates = db_resp[0].non_sidereal_json
+            self.tel.comBIAS("ON")
+
+            # The idea here is that the non sidereal
+            # targets will have an RA and Dec, RA Bias rate, Dec bias rate,
+            # position epoch, object time epoch, position angle, bias_percentage
+            # and object rate. The telescope should go to the coordinates
+            # RA+sin(position_angle)*object_rate, Dec+cos(position_angle)*object_rate
+            # and set the bias rates to 
+            # RA_bias_rate*bias_percentage, Dec_bias_rate*bias_percentage
+            # Scott June 2019
+
+            dt_epoch = pytz.utc.localize(datetime.datetime.strptime(self.rates["UTC_At_Position"], "%Y-%m-%dT%H:%M:%S"))
+            now = pytz.utc.localize(datetime.datetime.now())
+            delta_time = dt_epoch-now
+            
+            position_angle = float(self.rates['PositionAngle'])*math.pi/180
+            object_rate = float(self.rates['ObjectRate'])
+            ra_obj_rate = object_rate*math.sin(position_angle)
+            dec_obj_rate = object_rate*math.cos(position_angle)
+            ra_offset = ra_obj_rate*delta_time.total_seconds()
+            dec_offset = dec_obj_rate*delta_time.total_seconds()
+
+            rapct = float(self.rates["RA_BiasPerCent"])
+            decpct = float(self.rates['Dec_BiasPerCent'])
+            biasra = float(self.rates["RA_BiasRate"])*rapct/100.0
+            biasdec = float(self.rates["Dec_BiasRate"])*decpct/100.0
+
+            self.log("I", "Setting rates to {} {}".format(biasra, biasdec))
+            self.tel.command("BIASRA {}".format(biasra))
+            self.tel.command("BIASDEC {}".format(biasdec))
+
+            self.log("I", "object_rate:{} position_angle:{} now:{} dt_epoch:{}".format(object_rate, position_angle, now, dt_epoch) )
+            self.log("I", "Setting offset to {}s {}s".format(ra_offset, dec_offset))
+            self.setValue( 'woffs', '{}s {}s'.format(ra_offset, dec_offset), 'BIG61')
+
+            
+
+
+        
         
         
 
@@ -67,10 +108,11 @@ class scripter(scriptcomm.Rts2Comm):
 
     def run( self ):
         if self.script is not None:
+            self.setValue("SHUTTER", 0, "C0")
             self.log("I", "running target {name} at {ra} {dec}".format( **self.script  ) )
 
             # move the object from the center of the chip
-            self.setValue( 'woffs', '1m 0', 'BIG61')
+            #self.setValue( 'woffs', '1m 0', 'BIG61')
             total_exposures = 0
             for exp in self.script['obs_info']:
                 total_exposures += int( exp["amount"] )
@@ -84,8 +126,12 @@ class scripter(scriptcomm.Rts2Comm):
                     repeat = 1
                 self.log('W', "repeat is {}".format(repeat))
                 for ii in range(repeat):
+                    if exp['Filter'].lower() == 'clear':
+                        filt = 'Open'
+                    else:
+                        filt = exp['Filter']
 
-                    self.setValue("filter", self.filters[ exp['Filter'] ], 'W0' )
+                    self.setValue("filter",self.filters[exp['Filter']], 'W0' )
                     exp_num+=1
                     self.log("W", "Calling exp {} of {}".format(exp_num, total_exposures) )
                     self.log("W", "exp string is %b/queue/%N/%c/%t/%f" )
@@ -134,7 +180,7 @@ class scripter(scriptcomm.Rts2Comm):
                 except Exception as err:
                     self.log("E", "could not requeue b/c {}".format(err) )
 
-
+        self.tel.comBIAS("OFF")       
 
     def before_exposure(self):
         self.has_exposed = True
