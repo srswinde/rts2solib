@@ -66,17 +66,6 @@ class scripter(scriptcomm.Rts2Comm):
         self.setValue('ObservationID', db_resp[0].observation_id, "C0")
         self.setValue('GroupID', db_resp[0].group_id, "C0")
 
-        if db_resp[0].binning == '1x1':
-            self.setValue('binning', 1)
-        elif db_resp[0].binning == '2x2':
-            self.setValue('binning', 2)
-        elif db_resp[0].binning == '3x3':
-            self.setValue('binning', 3)
-        elif db_resp[0].binning == '4x4':
-            self.setValue('binning', 4)
-        else:# default to 3x3
-            self.setValue('binning', 3)
-
         if db_resp[0].non_sidereal:
             self.rates = db_resp[0].non_sidereal_json
             self.tel.comBIAS("ON")
@@ -90,9 +79,10 @@ class scripter(scriptcomm.Rts2Comm):
             # RA_bias_rate*bias_percentage, Dec_bias_rate*bias_percentage
             # Scott June 2019
 
-            dt_epoch = pytz.utc.localize(datetime.datetime.strptime(self.rates["UTC_At_Position"], "%Y-%m-%dT%H:%M:%S"))
-            now = pytz.utc.localize(datetime.datetime.now())
-            delta_time = dt_epoch-now
+            utc_at_position=self.rates["UTC_At_Position"]
+            dt_epoch = pytz.utc.localize(datetime.datetime.strptime(utc_at_position, "%Y-%m-%dT%H:%M:%S"))
+            now = pytz.utc.localize(datetime.datetime.utcnow())
+            delta_time = now-dt_epoch
             
 #            position_angle = float(self.rates['PositionAngle'])*math.pi/180
 #            object_rate = float(self.rates['ObjectRate'])
@@ -115,15 +105,8 @@ class scripter(scriptcomm.Rts2Comm):
             self.tel.command("BIASDEC {}".format(biasdec))
 
             #self.log("I", "object_rate:{} position_angle:{} now:{} dt_epoch:{}".format(object_rate, position_angle, now, dt_epoch) )
-            self.log("I", "Setting offset to {}s {}s".format(ra_offset, dec_offset))
+            self.log("I", "Setting offset to {}s {}s (UT {}, delta {})".format(ra_offset, dec_offset, utc_at_position, delta_time.total_seconds()))
             self.setValue( 'woffs', '{}s {}s'.format(ra_offset, dec_offset), 'BIG61')
-
-            
-
-
-        
-        
-        
 
 #        scriptjson = os.path.join(self.cfg['script_path'], "{}.json".format( name ))
 #        self.log("I", "id {}, name {} scriptjson {}".format(targetid, name, scriptjson))
@@ -134,7 +117,7 @@ class scripter(scriptcomm.Rts2Comm):
             
         self.has_exposed = False
  
-
+    
 
 
     def run( self ):
