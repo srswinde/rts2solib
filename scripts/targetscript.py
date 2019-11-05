@@ -52,6 +52,12 @@ class scripter(scriptcomm.Rts2Comm):
         self.log("W", "looking at target {}".format(targetid))
         name = self.getValue("current_name", "EXEC")
 
+
+        # remove the first 4 bits that make the name
+        # unique and write that to objectName.
+        self.setValue( "objectName", name[4:] )
+
+
         engine = create_engine( self.cfg["orp_dbpath"] )
         meta = MetaData()
         meta.reflect(bind=engine)
@@ -65,6 +71,20 @@ class scripter(scriptcomm.Rts2Comm):
             raise
         self.setValue('ObservationID', db_resp[0].observation_id, "C0")
         self.setValue('GroupID', db_resp[0].group_id, "C0")
+
+        
+        binning = db_resp[0].binning
+        if binning in ("4x4", "3x3", "2x2", "1x1"):
+            if binning == "1x1":
+                self.setValue("binning", 1)
+            if binning == "2x2":
+                self.setValue("binning", 2)
+            if binning == "3x3":
+                self.setValue("binning", 3)
+            if binning == "4x4":
+                self.setValue("binning", 4)
+        else:
+            self.setValue("binning", 4) # 4x4 binning
 
         if db_resp[0].non_sidereal:
             self.rates = db_resp[0].non_sidereal_json
@@ -84,18 +104,6 @@ class scripter(scriptcomm.Rts2Comm):
             now = pytz.utc.localize(datetime.datetime.utcnow())
             delta_time = now-dt_epoch
             
-#            position_angle = float(self.rates['PositionAngle'])*math.pi/180
-#            object_rate = float(self.rates['ObjectRate'])
-#            ra_obj_rate = object_rate*math.sin(position_angle)
-#            dec_obj_rate = object_rate*math.cos(position_angle)
-#            ra_offset = ra_obj_rate*delta_time.total_seconds()
-#            dec_offset = dec_obj_rate*delta_time.total_seconds()
-#
-#            rapct = float(self.rates["RA_BiasPerCent"])
-#            decpct = float(self.rates['Dec_BiasPerCent'])
-#            biasra = float(self.rates["RA_BiasRate"])*rapct/100.0
-#            biasdec = float(self.rates["Dec_BiasRate"])*decpct/100.0
-#
             biasra = float(self.rates['RA_BiasRate'])
             biasdec = float(self.rates['Dec_BiasRate'])
             ra_offset = biasra*delta_time.total_seconds()
@@ -104,17 +112,13 @@ class scripter(scriptcomm.Rts2Comm):
             self.tel.command("BIASRA {}".format(biasra))
             self.tel.command("BIASDEC {}".format(biasdec))
 
-            #self.log("I", "object_rate:{} position_angle:{} now:{} dt_epoch:{}".format(object_rate, position_angle, now, dt_epoch) )
             self.log("I", "Setting offset to {}s {}s (UT {}, delta {})".format(ra_offset, dec_offset, utc_at_position, delta_time.total_seconds()))
             self.setValue( 'woffs', '{}s {}s'.format(ra_offset, dec_offset), 'BIG61')
 
-#        scriptjson = os.path.join(self.cfg['script_path'], "{}.json".format( name ))
-#        self.log("I", "id {}, name {} scriptjson {}".format(targetid, name, scriptjson))
-#        self.log("I", "DOES THIS CHANGE IT?????????")
-#        if os.path.exists(scriptjson):
-#            with open(scriptjson, 'r') as jsonfd:
-#                self.script = json.load( jsonfd )  
-            
+        else:
+            self.tel.command("BIASRA 0")
+            self.tel.command("BIASDEC 0")
+
         self.has_exposed = False
  
     
