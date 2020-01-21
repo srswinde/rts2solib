@@ -30,7 +30,7 @@ class filter_set:
             "Arizona-I": ("I",), 
             "Harris-B": ("B",),
             "Schott-8612": ("Schott",),
-            "Open": ("Open", "open", "OPEN")  }
+            "Open": ("Open", "open", "OPEN", "Clear", "CLEAR", "clear")  }
 
 
     def __init__( self, filters=None, prx=None ):

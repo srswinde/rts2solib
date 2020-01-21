@@ -40,7 +40,9 @@ def to_dataserver( fname, outfile='test.fits', clobber=True ):
     height = 0
     for ext in fitsfd:
         if hasattr( ext, 'data' ):
-            if ext.data is not None or ext.data is not []:
+            if ext.data is None or ext.data is []:
+                continue
+            else:
                 try:
                     width+=ext.data.shape[0]
                     height+=ext.data.shape[1]
@@ -57,8 +59,8 @@ def to_dataserver( fname, outfile='test.fits', clobber=True ):
             clobber_char = '!'
     else:
             clobber_char = ''
-    meta = "          {} {}{} 1 {} {} 0".format( fsize, clobber_char, '/home/rts2obs/data/rts2'+outfile, width, height )
-    meta = meta + (256-len(meta))*' '
+    meta = "          {} {}{} 1 {} {} 0".format( fsize, clobber_char, '/home/rts2obs/data/rts2'+outfile, width, height ).encode()
+    meta = meta + (256-len(meta))*b' '
 
     data = meta+fd.read()
     lendata = len(data)

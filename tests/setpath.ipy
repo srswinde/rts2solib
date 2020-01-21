@@ -3,7 +3,7 @@
 import sys
 
 
-sys.path.insert(0, "/home/rts2obs/git-clones/rts2solib")
+sys.path.insert(0, "/home/scott/git-clones/rts2solib")
 
 from rts2solib.rts2_wwwapi import rts2comm
 from rts2solib.big61filters import filter_set

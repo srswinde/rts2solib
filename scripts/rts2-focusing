@@ -1,115 +1,129 @@
-#!/usr/bin/python
-from astropy.io import fits
-from rts2 import scriptcomm
-from scottSock import scottSock
-#from rts2solib import focalfit
+#!/usr/bin/python3 -W ignore
+#!/home/rts2obs/miniconda3/bin/python3 -W ignore
 
+
+#from __future__ import print_function
+#!/home/rts2obs/miniconda3/bin/python -W ignore
+
+#from rts2 import scriptcomm
+
+from rts2solib import scriptcomm, to_dataserver
+from astropy.io import fits
+from scottSock import scottSock
+import sys
 import os
-sepPresent = False
-try:
-	import sep
-	sepPresent = True
-except Exception as ex:
-	pass
+import time
+import subprocess, shlex
+
 
 
 class ShiftFocus (scriptcomm.Rts2Comm):
-	"""Take and process focussing data."""
+    """Take and process focussing data."""
 
-	def __init__(self,exptime = 10,step=20,attempts=10,filterGalaxies=False):
-		scriptcomm.Rts2Comm.__init__(self)
-		self.log('I', 'This is a test')
-		self.exptime = exptime
-		self.step = step
-		self.focuser = "F0"
-		self.attempts = attempts
+    def __init__( self ):
+        scriptcomm.Rts2Comm.__init__( self )
+        self.focuser = "F0"
 
-		# if |offset| is above this value, try linear fit
-		self.linear_fit = self.step * self.attempts / 2.0
-		# target FWHM for linear fit
-		self.linear_fit_fwhm = 3.5
-		self.filterGalaxies = filterGalaxies
+    def shift_focus( self ):
+        self.setValue("exposure", 1) # set exp time to 90 secs
+        self.setValue("SHUTTER", 0, "C0")
+        try:
+            self.setValue("FOC_DEF", 2000, self.focuser)
+            time.sleep(2.0)
+            self.log('I', 'Taking image')
+            self.log('I', '... about to take image')
+            img1 = self.exposure( self.before_readout, "%b/queue/%N/%c/focus/%f" )
+            self.setValue("FOC_DEF", 3000, self.focuser)
+            time.sleep(4.0)
+            self.log("I", "SENDING TO DATASERVER")
+            to_dataserver(img1, "focus1.fits")
+            img2 = self.exposure(None, "%b/queue/%N/%c/focus/%f" )
+            to_dataserver(img2, "focus2.fits")
+        except Exception as err:
+            self.log("I", "err is {} ".format(err))
 
-	def shift_focus( self ):
-		self.setValue("shiftfocus", 1, "C0")
-		#self.setValue( "exposure", 5 )
-		#img = self.exposure( self.before_readout, "%b/queue/%N/%c/%t/%f" )
-		n_shifts = int(self.getValue( "SHIFT_N", "C0" ))
-		shift_fo= int(self.getValue( "SHIFT_FO", "C0" ))
-		focpos = float(self.getValue("FOC_TAR", self.focuser).split()[0])
-		#self.setValue("FOC_TAR", focpos-((n_shifts*shift_fo)/2.0), self.focuser)
-		self.setValue("FOC_TAR", 2250, self.focuser)
-		img = self.exposure( self.before_readout, '%b/queue/%f' )
-                to_dataserver(img)
-		#call focalfit
-		#focfit = focalfit(img)
-#		focalvalue_fit = focfit.run()
-#		flags = focfit.flags
-#                if len([f for f in flags if f == 2]) > 0:
-#                    self.log('I', "some fits were high ended, maybe start with the initial focal position higher")
-#                if len([f for f in flags if f == 1]) > 0:
-#                    self.log('I', "some fits were low ended, maybe start with the initial focal poistion lower")
-#                if len([f for f in flags if f == 0]) > 0:
-#                    self.log('I', str(len([f for f in flags if f == 0])) + " good fits for returned focal value")
-#                if len(flags) == 0:
-#                    self.log('I', "No groupings found, attempt longer exposures or different position")
+        exer = "/home/rts2obs/conda/bin/python3"
+        focus_script = "/home/rts2obs/conda/te_pickering/ARTNfocus/scripts/mont4k_focus.py"
+        intra = img1
+        extra = img2
+#        intra = "/home/rts2obs/data/foci/focus1.fits"
+#        extra = "/home/rts2obs/data/foci/focus2.fits"
+        outputfile = "/tmp/focus.out"
+
+        cmd = "{} {} -i {} -e {} -f {}"
+        args = shlex.split(cmd.format(exer, focus_script, intra, extra, outputfile))
+        self.log("I", "Running focus analysis.")
+        resp=subprocess.check_output(args).decode()
+        for line in resp.split('\n'):
+            self.log("I", line)
+
+        with open(outputfile) as focusdat:
+            focpos = focusdat.read()
+
+        try:
+            focpos_int = int(focpos)
+            if 2100 < focpos_int < 2700:
+                self.setValue("FOC_TAR", focpos_int, "F0")
+                self.setValue("FOC_DEF", focpos_int, "F0")
+            else:
+                self.log("E", "Focus analysis gave erroneous focus position {}".format(focpos_int))
+
+        except ValueError as err:
+            self.log("E", "could not convert focus.out output to integer:{}".format(focpos))
+
+
+    def before_readout(self):
+
+        self.log( 'I', 'just Before readout' )
+
+    def run( self ):
+        self.shift_focus()
+
+#def to_dataserver( fname, outfile='test.fits', clobber=True ):
 #
-#		self.log('I', "setting focus to "+str(focalvalue_fit))
-#		self.setValue("FOC_TAR", focalvalue_fit, self.focuser)		
-		self.setValue("shiftfocus", 0, "C0")
-		#to_dataserver( img )
-		
-
-	def before_readout(self):
-		
-		self.log( 'I', 'Before readout' )
-
-	def run( self ):
-		self.shift_focus()
-
-def to_dataserver( fname, outfile='test.fits', clobber=True ):
-
-	fitsfd = fits.open( fname )
-		
-
-        width = 0
-        height = 0
-        i=0
-        for ext in fitsfd:
-                if hasattr( ext, 'data' ):
-                        if ext.data is not None:
-                            try:
-                                width+=ext.data.shape[0]
-                                height+=ext.data.shape[1]
-                                i+=1
-                            except Exception as err:
-                                pass
-
-        fitsfd.close()
-        fsize = os.stat(fname).st_size
-
-        fd = open(fname, 'rb')
-
-
-        if clobber:
-                clobber_char = '!'
-        else:
-                clobber_char = ''
-        meta = "          {} {}{} 1 {} {} 0".format( fsize, clobber_char, '/home/rts2obs/shiftfocus.fits', width, height )
-        meta = meta + (256-len(meta))*' '
-
-        data = meta+fd.read()
-        lendata = len(data)
-        soc = scottSock( '10.30.1.1', 6543 )
-
-        counter = 0
-        socsize = 1024
-        buffsize = 0
-        while buffsize < len(data):
-                sent = soc.send( data[buffsize:buffsize+1024] )
-                buffsize+=sent
-
-
+#        try:
+#            fitsfd = fits.open( fname )
+#
+#            width = 0
+#            height = 0
+#            i=0
+#            for ext in fitsfd:
+#                    if hasattr( ext, 'data' ):
+#                            if ext.data is not None:
+#                                try:
+#                                    width+=ext.data.shape[0]
+#                                    height+=ext.data.shape[1]
+#                                    i+=1
+#                                except Exception as err:
+#                                    pass
+#
+#            fitsfd.close()
+#            fsize = os.stat(fname).st_size
+#
+#            fd = open(fname, 'rb')
+#
+#
+#            if clobber:
+#                    clobber_char = '!'
+#            else:
+#                    clobber_char = ''
+#            meta = "          {} {}{} 1 {} {} 0".format( fsize, clobber_char, '/home/rts2obs/'+outfile, width, height )
+#            meta = meta + (256-len(meta))*' '
+#
+#            data = meta+fd.read()
+#            lendata = len(data)
+#            soc = scottSock( '10.30.1.1', 6543 )
+#
+#            counter = 0
+#            socsize = 1024
+#            buffsize = 0
+#            while buffsize < len(data):
+#                    sent = soc.send( data[buffsize:buffsize+1024] )
+#                    buffsize+=sent
+#
+#        except Exception as err:
+#            print("log I err {}".format(err))
+#
 f=ShiftFocus()
 
 f.run()

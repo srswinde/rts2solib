@@ -1,8 +1,8 @@
-#!/usr/bin/python -W ignore
+#!/usr/bin/python3 -W ignore
 
 
-from __future__ import print_function
-from rts2 import scriptcomm
+#from __future__ import print_function
+from rts2solib import scriptcomm
 from astropy.io import fits
 from scottSock import scottSock
 import sys
