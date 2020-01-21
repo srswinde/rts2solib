@@ -1,25 +1,23 @@
-from __future__ import print_function
-import rts2
 import json
-import baseclasses
+from . import baseclasses
 import os
 
-from rts2_wwwapi import rts2comm
-# These are slow to import 
+from .rts2_wwwapi import rts2comm
+# These are slow to import
 # perhaps we can find a better
-# way to display Angles and units. 
+# way to display Angles and units.
 # like :https://github.com/srswinde/astro
 from astropy.coordinates import Angle
 from astropy import units as u
 
 
-try:
-    raise Exception("NO MPC")
-    from astroquery.mpc import MPC
-except Exception as err:
-    print( err )
+#try:
+#    raise Exception("NO MPC")
+#    from astroquery.mpc import MPC
+#except Exception as err:
+#    print( err )
 
-from rts2_wwwapi import rts2comm
+from .rts2_wwwapi import rts2comm
 
 class so_exposure:
 
@@ -37,56 +35,62 @@ class so_exposure:
                 "amount" :self.num_exposures,
                 }
         return thedict
- 
+
     def __repr__(self):
-	
+
         return json.dumps( self.__dictify__() )
 
 
     def __getitem__( self, key ):
-		
+
         return self.__dictify__()[key]
 
 class so_target(object):
-    """Class to hold and save to file a target's 
+    """Class to hold and save to file a target's
     observation parameters ie filters, number of
-    exposure etc. This is based on Sam's 
+    exposure etc. This is based on Sam's
     QueueObject class.
 
-    The specifics of the observation are saved in 
+    The specifics of the observation are saved in
     the /home/rts2obs/.rts2scripts directory. This
     file is later read by an rts2 script to carry
-    out the observation. 
+    out the observation.
     """
 
     def __init__(self, name, ra=None, dec=None, Type=None, tar_info=None, obs_info=None, artn_obs_id=None, artn_group_id=None ):
-    
+
 
         """Constructor method
 
         params:
-            name: str 
+            name: str
                 The name of the object must be uniqure from other objects in the database
             ra : str sexagesimal ra coordinate
 
             dec: str sexagesimal dec coordinate
 
-            Type: char 
+            Type: char
                 The value of the type_id in the database this differentiates between
-                stellar 'O' and non stellar 'E' and callibration. 
+                stellar 'O' and non stellar 'E' and callibration.
 
             tar_info: str
                 Extra information about target like MPC or TLE. This corresponds to the
                 tar_info in the database
 
             obs_info: list (of so_exposure)
-                Information specific to the observation ie filters, exposure time etc. 
+                Information specific to the observation ie filters, exposure time etc.
 
+            artn_obs_id:
+                the ARTN observation ID
+
+            artn_group_id:
+                the ARTN group ID
         """
 
         if obs_info is None:
             # no obs_info given use the default
             obs_info = [so_exposure()]
+
         elif type(obs_info) == list:
             proper_obs_info = []
             for exp in obs_info:
@@ -94,12 +98,12 @@ class so_target(object):
                     proper_obs_info.append(exp)
                 else:
                     proper_obs_info.append(so_exposure(**exp))
-                
+
             obs_info = proper_obs_info
-        
+
         self.cfg = baseclasses.Config()
-    
-    
+
+
 
         self.type = Type
         self.name = name
@@ -131,8 +135,11 @@ class so_target(object):
 
     def reload(self):
         commer=rts2comm()
-        commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
-       
+
+        # the following line should be handled rts2.ini on local machine for
+        # now
+        #commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
+
         targ = commer.get_target(self.name)
         self.id = targ[0]
         self.ra = targ[1]
@@ -153,10 +160,10 @@ class so_target(object):
                     "ra"    : self.ra,
                     "dec"   : self.dec,
                     #"id"        : self.id,
-	                "obs_id"    : self.obs_id,
+                    "obs_id"    : self.obs_id,
                     "group_id": self.group_id,
-                    "obs_info" : [] 
-                    
+                    "obs_info" : []
+
             }
             for obs in self.observation_info:
                     thedict['obs_info'].append(
@@ -179,9 +186,10 @@ class so_target(object):
         """Save target script to rts2scripts"""
 
         self.id = self.create_target_api()
-    
+
         commer=rts2comm()
-        commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
+	    # the following line should be handle by rts2.ini and not here. 
+        #commer.setscript(self.id, script="exe /home/rts2obs/.local/bin/targetscript.py")
 
         if save_file is None:
             save_file = "{}.json".format( self.name )
@@ -195,18 +203,25 @@ class so_target(object):
     def create_target_api( self, prx=None ):
         """Create the rts2 target in the database"""
         commer = rts2comm()
-        targ = commer.get_target(self.name)
+        try:
+            targ = commer.get_target(self.name)
+        except Exception as err:
+            if self.name.endswith("target"):
+                raise NameError("Target can not end with `target'")
+            else:
+                raise
+
         if targ is None: #target does not exist
             ra = Angle( self.ra, unit=u.hour )
             dec = Angle( self.dec, unit=u.deg )
+
             targid = commer.create_target( self.name, ra.deg, dec.deg )
 
-    	else:
-            targid = targ[0]
-            
-	
+        else:
+            targid = targ[0][0]
 
-	    #return target id
+
+
         return targid
 
     def create_target_db( self ):
@@ -215,12 +230,12 @@ class so_target(object):
             raise NotImplementedError("This type of target ({}) can not be saved to db".format(self.type))
         ra = Angle( self.ra, unit=u.hour )
         dec = Angle( self.dec, unit=u.deg )
-        
+
         # access the database
         tar = rts2_targets()
 
-        
-        # we leave out the tar_id as it is 
+
+        # we leave out the tar_id as it is
         # the primary key. Better to let the
         # the rts2_target class handle that internally
         rowvals = {
@@ -248,15 +263,15 @@ class stellar(so_target):
 
         ra = Angle( self.ra, unit=u.hour )
         dec = Angle( self.dec, unit=u.deg )
-        
+
         # access the database
         tar = rts2_targets()
         n_samename = len(tar.query().filter(tar._rowdef.tar_name.like("{}%".format(self.name))).all())
         if n_samename > 0:
-        
+
             self.name = "{}_{:02d}".format(self.name, n_samename)
 
-        # we leave out the tar_id as it is 
+        # we leave out the tar_id as it is
         # the primary key. Better to let the
         # the rts2_target class handle that internally
         rowvals = {
@@ -277,9 +292,10 @@ class stellar(so_target):
 class asteroid(so_target):
 
     def __init__( self, name, jsondata=None, mpc=None, obs_info=None ):
+        raise NotImplementedError("asteroid has not been implemented yet")
         mpc = MPC()
         result = mpc.query_object_async( "asteroid", name=name )
-        
+
         self.vals = result.json()[0]
         self.mpc = self.mpc_format()
         super(self.__class__, self).__init__(name=self.vals['name'], Type='E', tar_info=self.mpc, obs_info=obs_info)
@@ -310,7 +326,7 @@ class asteroid(so_target):
             }
 
         thestr = [' ']*140
-        for fkey, finfo in stru.iteritems():
+        for fkey, finfo in stru.items():
             fpos = finfo[:2]
             fmt = finfo[2]
             numchars = ( fpos[1] - fpos[0] )+1
@@ -322,7 +338,7 @@ class asteroid(so_target):
                     y,m,d = [ int(float(diter)) for diter in self.vals[fkey].split('-') ]
                     century = int(str(y)[:2])
                     cenchar = {18:'I', 19:'J', 20:'K'}[century]
-                    day_month = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 
+                    day_month = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
                             'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V']
                     daychar = day_month[d-1]
                     monchar = day_month[m-1]
@@ -348,21 +364,21 @@ class asteroid(so_target):
                     fval = strval
 
                 listval = list( fval )
-                
+
                 diff = (numchars - len( fval ))
-                
+
                 if diff > 0:
-                    
+
                     padded = diff *[' ']
                     padded.extend(listval)
                     listval = padded
 
                 elif diff < 0:
                     raise ValueError("{}'s value, {}, has too many chars ({}) should be < {}".format(fkey, fval, len(fval), numchars))
-                    
 
 
-                thestr[fpos[0]-1:fpos[1]] = listval 
+
+                thestr[fpos[0]-1:fpos[1]] = listval
             else:
                 thestr[fpos[0]-1:fpos[1]] = ['X']*(numchars)
         #extras
@@ -379,7 +395,7 @@ class asteroid(so_target):
             'type_id':self.type
         }
         tar.addrow(**kwargs)
-                
+
 
 
 
@@ -392,7 +408,7 @@ class focusobs(so_target):
 
 def test():
 
-    for valname, pos in stru.iteritems():
+    for valname, pos in stru.items():
         print(valname, fm[ pos[0]-1: pos[1] ])
 
 def ParseRADec(rastr):
@@ -424,7 +440,7 @@ def readlotis(fname):
                 exps = []
                 for _filter in filters:
                     exps.append(so_exposure(_filter, exp_time, amount))
-                
+
                 target = stellar( name, ra, dec, exps )
                 targets.append(target)
 

@@ -81,7 +81,7 @@ class abstract_row(object):
 
     
     def pp(self):
-        print type(self)
+        print(type(self))
 
 
     def dictify(self):
@@ -273,7 +273,7 @@ class rts2_targets( dbtable ):
                 if hasattr(row, key):
                     setattr(row, key, kwargs[key])
                 else:
-                    print type(row)
+                    print( type(row) )
 					
                     raise Exception("bad column name {}".format(key))
 

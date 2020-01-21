@@ -1,9 +1,8 @@
-from __future__ import print_function
-from rtsapi import JSONProxy
+from .rtsapi import JSONProxy
 import requests
 import json
 from .baseclasses import Config
-# from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 import re
 
 """This module is a wrapper for the HTTP/JSON based rts2api
@@ -75,7 +74,7 @@ class rts2_value(object):
 
 
     def printflags(self):
-        for fname, hx in dict(self.varflags).iteritems():
+        for fname, hx in dict(self.varflags).items():
             print(fname, (self.flags & hx) == hx )
 
 
@@ -87,6 +86,9 @@ class rts2comm(JSONProxy):
         self.cfg = Config()
         self.devlist = self.cfg['device_list']
         self.baseurl = self.cfg['rts2url']
+
+        # for compatability with JSONProxy
+        self.url = self.baseurl
         self.auth = (self.cfg["username"], self.cfg['password'] )
         self.debug = debug
         JSONProxy.__init__(self, self.baseurl, username=self.cfg["username"], password=self.cfg['password'] )
@@ -134,7 +136,7 @@ class rts2comm(JSONProxy):
 
     def get_device_info_all( self ):
         """Same as device info but return data on all the devices"""
-        return json.loads( self._converse("api/getall") )
+        return self._converse("api/getall")
         #return {device:self.get_device_info(device) for device in self.devlist}
 
 
@@ -174,7 +176,7 @@ class rts2comm(JSONProxy):
         try:
            retn = r.json()
         except ValueError:
-            raise ValueError( "Could not serialize JSON \n{}".format( r.text ) )
+            raise ValueError( "Could not serialize JSON \n{}\n url is {}".format( r.text, r.url ) )
             
 
         return retn
@@ -233,7 +235,7 @@ class rts2comm(JSONProxy):
         if 'd' not in target:
             raise ValueError("RTS2 cannot find target {}. Create with rts2com.create_target".format(name))
 
-    	if len(target['d']) == 0:
+        if len(target['d']) == 0:
             retn = None
         else:
             retn = target['d']

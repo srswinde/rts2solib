@@ -30,7 +30,7 @@ class filter_set:
             "Arizona-I": ("I",), 
             "Harris-B": ("B",),
             "Schott-8612": ("Schott",),
-            "Open": ("Open", "open", "OPEN")  }
+            "Open": ("Open", "open", "OPEN", "Clear", "CLEAR", "clear")  }
 
 
     def __init__( self, filters=None, prx=None ):
@@ -39,20 +39,22 @@ class filter_set:
 
         if filters is None:
             if prx is None:
-		    
+
                self._filter_list = rts2_wwwapi.rts2comm().get_filters()
 
         elif type(filters) == list:
             self._filter_list = filters
 
         elif type(filters) == dict:
+            raise TypeError("Filters are should not be a dict, it probably should be None")
             # this assumes that the keywords of the dictionary are 
             # the fitler names and the value is the filter number. 
 
-            
+
             #sort by filter number and reverse look up. 
-            for key, value in sorted(filters.iteritems(), key=lambda (k,v): (v,k)):
-                self._filter_list.append( key )
+            # this doesn't work in python3
+            #for key, value in sorted(filters.iteritems(), key=lambda (k,v): (v,k)):
+                #self._filter_list.append( key )
 
         elif type(filters) == str or type(filters) == unicode:
             self._filter_list = str(filters).split()
@@ -62,8 +64,8 @@ class filter_set:
 
 
     def check_alias( self, alias ):
-        
-        for name, aliases in self.alias.iteritems():
+
+        for name, aliases in self.alias.items():
             if alias == name:
                 return alias
 

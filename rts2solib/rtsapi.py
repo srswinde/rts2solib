@@ -17,8 +17,9 @@
 # 51 Franklin Street, Fifth Floor
 # Boston, MA 02110-1301 USA
 
-from future import standard_library
-standard_library.install_aliases()
+# from __future__ import standard_library
+# standard_library.install_aliases()
+import requests
 
 try:
     import base64
@@ -162,6 +163,11 @@ class Rts2JSON:
     ):
         use_proxy = False
         prefix = ''
+        self.url=url
+        self.username = username
+        self.password = password
+        self.auth = (username, password)
+        return 
         # use proxy only if not connecting to localhost
         if url.find('localhost') == -1 and (
             'http_proxy' in os.environ or http_proxy
@@ -211,7 +217,7 @@ class Rts2JSON:
         if args:
             url += '?' + urlencode(args)
         if self.verbose:
-            print('retrieving {0}'.format(url))
+            print(('retrieving {0}'.format(url)))
         try:
             th = hlib
             if hlib is None:
@@ -245,20 +251,33 @@ class Rts2JSON:
             if self.verbose:
                 import traceback
                 traceback.print_exc()
-                print('Cannot parse', url, ':', ec)
+                print(('Cannot parse', url, ':', ec))
             raise ec
         finally:
             if hlib is None:
                 self.hlib_lock.release()
 
+#    def loadData(self, path, args={}, hlib=None):
+#       return self.getResponse(path, args, hlib).read()
+
     def loadData(self, path, args={}, hlib=None):
-        return self.getResponse(path, args, hlib).read()
+        if path.startswith("/"): path = path[1:]
+        resp = requests.get(self.url+"/"+path, params=args, auth=self.auth)
+        try:
+            jdata = resp.json()
+        except Exception as e:
+            raise ValueError("Could not jsondecode resp \n{}".format(resp.text))
+        return resp.json()
+
 
     def loadJson(self, path, args=None):
-        d = self.loadData(path, args)
-        if self.verbose:
-            print(d)
-        return json.loads(d)
+
+        json_data = self.loadData(path, args)
+        if "error" in json_data:
+            raise Exception("Json retured error: {}".format(json_data))
+        #if self.verbose:
+        #    print(d)
+        return json_data
 
     def chunkJson(self, r):
         r.read_by_chunks = True
@@ -287,8 +306,12 @@ class JSONProxy(Rts2JSON):
             self.devices = dict([(x, dall[x]['d']) for x in dall])
 
         else:
-            self.devices[device] = self.loadJson(
+            try:
+                self.devices[device] = self.loadJson(
                 '/api/get', {'d': device, 'e': 1})['d']
+            except Exception as err:
+                print(self.loadJson('/api/get', {'d': device, 'e': 1}))
+                raise
 
     def isIdle(self, device):
         return self.loadJson('/api/get', {'d': device, 'e': 1})['idle']
@@ -308,7 +331,7 @@ class JSONProxy(Rts2JSON):
             self.refresh(device)
             return self.devices[device]
 
-    def getVariable(self, device, value, refresh_not_found=False):
+    def getVariable(self, device, value, refresh_not_found=True):
         try:
             return self.devices[device][value]
         except KeyError as ke:
@@ -355,31 +378,31 @@ class JSONProxy(Rts2JSON):
                 self.selection_cache[device][name] = rep
             return rep
 
-    def setValue(self, device, name, value, async=None):
-        values = {'d': device, 'n': name, 'v': value, 'async': async}
-        if async:
-            values['async'] = async
+    def setValue(self, device, name, value, Async=None):
+        values = {'d': device, 'n': name, 'v': value, 'async': Async}
+        if Async:
+            values['async'] = Async
         self.loadJson('/api/set', values)
 
     def incValue(self, device, name, value):
         return self.loadJson('/api/inc', {'d': device, 'n': name, 'v': value})
 
-    def setValues(self, values, device=None, async=None):
+    def setValues(self, values, device=None, Async=None):
         if device:
             values = dict([('{0}.{1}'.format(device, x[0]), x[1])
                           for x in list(values.items())])
-        if async:
-            values['async'] = async
+        if Async:
+            values['async'] = Async
         self.loadJson('/api/mset', values)
 
-    def executeCommand(self, device, command, async=False):
+    def executeCommand(self, device, command, Async=False ):
         ret = self.loadJson(
             '/api/cmd',
             {
-                'd': device, 'c': command, 'e': 1, 'async': 1 if async else 0
+                'd': device, 'c': command, 'e': 1, 'async': 1 if Async else 0
             }
         )
-        if async:
+        if Async:
             return 0
         self.devices[device] = ret['d']
         return ret['ret']

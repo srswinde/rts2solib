@@ -74,7 +74,7 @@ def remove_bad_points(focs, fwhms):
 	npoints = len(focs)
 	nremoved = npoints
 	while nremoved > 0:
-		print nremoved
+		print( nremoved )
 		a = np.polyfit(focs[:], fwhms[:], 2)
 		b = np.poly1d(a)
 		x_interp = np.arange(focs[0],focs[len(focs)-1], 0.001)
@@ -96,10 +96,10 @@ def remove_bad_points(focs, fwhms):
 			yval = min([abs(fw - y) for y in list(y_interp)])
 			residuals.append(abs(fw-yval))
 		res_mean, res_std = np.mean(residuals), np.std(residuals)
-		print res_mean, res_std
+		print( res_mean, res_std )
 		popps = [kk for kk,res in enumerate(residuals) if abs(res-res_mean) > 1.7*res_std]
 		for aa,p in enumerate(popps):
-			print "removing point", p
+			print( "removing point", p )
 			focs.pop(p-aa)
 			fwhms.pop(p-aa)
 		nremoved = len(popps)

@@ -1,0 +1,7 @@
+git+https://github.com/srswinde/py-server@py3
+beautifulsoup4
+sqlalchemy
+pandas
+astroplan
+psycopg2
+pytz
