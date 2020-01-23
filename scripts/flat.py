@@ -8,7 +8,8 @@
 # You most probably would like to modify this file to suit your needs.
 # Please see comments in flats.py for details of the parameters.
 
-from rts2.flats import FlatScript, Flat
+from rts2solib import flats
+from flats import FlatScript, Flat
 import rts2.scriptcomm
 import json
 #from rts2solib.rts2_wwwapi import rts2comm

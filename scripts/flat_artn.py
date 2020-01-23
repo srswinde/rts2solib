@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Example configuation of flats.
 # (C) 2010 Petr Kubanek
@@ -8,8 +8,8 @@
 # You most probably would like to modify this file to suit your needs.
 # Please see comments in flats.py for details of the parameters.
 
-from rts2.flats import FlatScript, Flat
-import rts2.scriptcomm
+from rts2solib import flats 
+Flat, FlatScript = flats.Flat, flats.FlatScript
 import json
 #from rts2solib.rts2_wwwapi import rts2comm
 from rts2solib.big61filters import filter_set; Filters=filter_set()
