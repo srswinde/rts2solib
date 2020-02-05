@@ -14,8 +14,8 @@
 	</dec>
 	<HA>
 		   <interval>
-			   <lower>-85</lower>
-			   <upper>85</upper>
+			   <lower>-70</lower>
+			   <upper>70</upper>
 		   </interval>
 	</HA>
 
