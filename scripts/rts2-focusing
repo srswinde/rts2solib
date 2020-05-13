@@ -25,16 +25,16 @@ class ShiftFocus (scriptcomm.Rts2Comm):
         self.focuser = "F0"
 
     def shift_focus( self ):
-        self.setValue("exposure", 1) # set exp time to 90 secs
+        self.setValue("exposure", 30) # set exp time to 90 secs
         self.setValue("SHUTTER", 0, "C0")
         try:
             self.setValue("FOC_DEF", 2000, self.focuser)
-            time.sleep(2.0)
+            time.sleep(5.0)
             self.log('I', 'Taking image')
             self.log('I', '... about to take image')
             img1 = self.exposure( self.before_readout, "%b/queue/%N/%c/focus/%f" )
             self.setValue("FOC_DEF", 3000, self.focuser)
-            time.sleep(4.0)
+            time.sleep(5.0)
             self.log("I", "SENDING TO DATASERVER")
             to_dataserver(img1, "focus1.fits")
             img2 = self.exposure(None, "%b/queue/%N/%c/focus/%f" )
@@ -62,7 +62,7 @@ class ShiftFocus (scriptcomm.Rts2Comm):
 
         try:
             focpos_int = int(focpos)
-            if 2100 < focpos_int < 2700:
+            if 2100 < focpos_int < 2900:
                 self.setValue("FOC_TAR", focpos_int, "F0")
                 self.setValue("FOC_DEF", focpos_int, "F0")
             else:

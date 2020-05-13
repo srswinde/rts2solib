@@ -1,0 +1,22 @@
+#RTS2 devices configuration
+#device	type	device_name	options
+#example:
+teld	tcsng	BIG61	-t 10.30.5.69:5750 -n BIG61 --horizon /etc/rts2/horizon pec_state=1 standby_park=2
+filterd	galil	W0	-g 10.30.1.1 -n 6
+focusd	ng	F0	-f 10.30.5.69:5750 -n BIG61
+
+camd	azcam3	C0	-a 10.30.1.10:2402 -n 10.30.1.24 --wheeldev W0 --focdev F0
+sensor  bigelow CLOUD
+##camd    azcam3 C0  -a 10.30.1.11:2402 -n 10.30.1.1 --wheeldev W0 --focdev F0 --lock-prefix /home/petr/rts2-sys/ --debug --server localhost:2617
+
+
+#dome tcsng DOME
+#
+#
+#fitlerd	dummy F0
+#focusd dummy F0
+#filterd dummy W0
+#camd dummy C0
+#teld dummy BIG61
+
+#cupola dummy DOME 

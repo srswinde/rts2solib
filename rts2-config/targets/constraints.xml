@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<constraints>
+	<zenithDistance>
+		<interval>
+			<upper>65</upper>
+		</interval>
+	</zenithDistance>
+	<dec>
+		<interval>
+			<upper>58</upper>
+			<lower>-60</lower>
+		</interval>
+	</dec>
+	<HA>
+		   <interval>
+			   <lower>-70</lower>
+			   <upper>70</upper>
+		   </interval>
+	</HA>
+
+</constraints>

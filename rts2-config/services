@@ -1,0 +1,8 @@
+#service	service_name	options
+imgproc		IMGP
+#grbd		GRBD
+executor	EXEC auto_loop=false default_auto_loop=false 
+selector	SEL --add-queue manual --add-queue plan queue_only=true selector_enabled=true plan_queing=3
+#specify HTTPD user, if you wish so
+#httpd		HTTPD		--run-as user
+httpd		HTTPD
